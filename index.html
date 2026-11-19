@@ -56,6 +56,7 @@ nav button.on{color:var(--ambar)}
  <button data-v="hoy" class="on">🍂<br>Hoy</button>
  <button data-v="pro">📈<br>Progreso</button>
  <button data-v="reg">📒<br>Registro</button>
+ <button data-v="usr">👥<br>Personas</button>
  <button data-v="eq" id="eqb" style="display:none">👥<br>Equipo</button>
  <button data-v="not">🔔<br>Alertas</button>
  <button data-v="aj">⚙️<br>Ajustes</button>
@@ -83,7 +84,17 @@ const GITHUB={owner:'',repo:'',token:''}; // opcional; el botón de GitHub solo 
 const fmt=d=>d.toLocaleDateString('en-CA');
 const today=()=>fmt(new Date());
 const hhmm=()=>new Date().toTimeString().slice(0,5);
+const t12=h=>{if(!h)return'';const [H,M]=h.split(':').map(Number);return `${H%12||12}:${String(M).padStart(2,'0')} ${H<12?'AM':'PM'}`};
+const timePick=id=>`<div class="row" id="${id}"><select><option value="">Sin hora</option>${[...Array(12)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}</select><select>${[...Array(12)].map((_,i)=>{const m=String(i*5).padStart(2,'0');return`<option>${m}</option>`}).join('')}</select><select><option>AM</option><option>PM</option></select></div>`;
+const fbErr=e=>{const c=e?.code||'';toast(
+  c.includes('permission')?'Sin permiso en Firestore: publica las reglas en la consola de Firebase':
+  (c==='timeout'||c.includes('unavailable')||c.includes('not-found')||c.includes('failed-precondition'))?'Firestore no responde: crea la base de datos y revisa que las reglas estén publicadas':
+  'Error: '+(e?.message||c),'borgona')};
+const snap=(r,fn)=>fb.F.onSnapshot(r,fn,fbErr);
+const W=(p,ms=8000)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),ms))]);
+const readTime=id=>{const x=[...document.querySelectorAll('#'+id+' select')];if(!x[0]?.value)return'';let H=+x[0].value%12;if(x[2].value==='PM')H+=12;return String(H).padStart(2,'0')+':'+x[1].value};
 
+let peer={uid:null,date:null,tasks:[],logs:[]},peerUn=[];
 let all={users:[],tasks:[],logs:[]},draft={},me=null,ready=false,tasks=[],logs=[],fb=null,unsubs=[],view='hoy',pending=null,authMode='login',per='sem',off=0;
 
 /* ---------- Inicio y usuarios ---------- */
@@ -96,7 +107,7 @@ async function init(){
       const app=A.initializeApp(cfg);
       fb={F,S,U,db:F.getFirestore(app),st:S.getStorage(app),auth:U.getAuth(app)};
       U.onAuthStateChanged(fb.auth,u=>{
-        unsubs.forEach(x=>x());unsubs=[];tasks=[];logs=[];all={users:[],tasks:[],logs:[]};
+        unsubs.forEach(x=>x());unsubs=[];tasks=[];logs=[];all={users:[],tasks:[],logs:[]};peerUn.forEach(x=>x());peerUn=[];peer={uid:null,date:null,tasks:[],logs:[]};
         me=u?{uid:u.uid,name:u.displayName||'Usuario',photo:'',admin:false}:null;
         if(me){
           subscribe();
@@ -111,15 +122,25 @@ async function init(){
 function subscribe(){
   const {F,db}=fb;
   const q=n=>F.query(F.collection(db,n),F.where('uid','==',me.uid));
-  unsubs=[F.onSnapshot(q('tasks'),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
-          F.onSnapshot(q('logs'),s=>{logs=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
-          F.onSnapshot(F.query(F.collection(db,'avisos'),F.where('toUid','==',me.uid),F.where('seen','==',false)),s=>s.docChanges().forEach(c=>{
+  unsubs=[snap(q('tasks'),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+          snap(q('logs'),s=>{logs=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+          snap(F.query(F.collection(db,'avisos'),F.where('toUid','==',me.uid),F.where('seen','==',false)),s=>s.docChanges().forEach(c=>{
             if(c.type==='added'){const x=c.doc.data();fire(x.title,x.body,x.theme);F.updateDoc(c.doc.ref,{seen:true})}})),
-          F.onSnapshot(F.doc(db,'users',me.uid),s=>{const x=s.data()||{};if(x.name)me.name=x.name;me.photo=x.photo||'';const a=!!x.admin;if(a&&!me.admin){me.admin=true;subAdmin()}if(!a)me.admin=false;refresh()})];
+          snap(F.doc(db,'users',me.uid),s=>{const x=s.data()||{};if(x.name)me.name=x.name;me.photo=x.photo||'';const a=!!x.admin;if(a&&!me.admin){me.admin=true;subAdmin()}if(!a)me.admin=false;refresh()}),
+          snap(F.collection(db,'users'),s=>{all.users=s.docs.map(d=>({id:d.id,uid:d.id,...d.data()}));refresh()})];
 }
 function subAdmin(){
   const {F,db}=fb;
-  ['users','tasks','logs'].forEach(n=>unsubs.push(F.onSnapshot(F.collection(db,n),s=>{all[n]=s.docs.map(d=>({id:d.id,...d.data()}));refresh()})));
+  ['tasks','logs'].forEach(n=>unsubs.push(snap(F.collection(db,n),s=>{all[n]=s.docs.map(d=>({id:d.id,...d.data()}));refresh()})));
+}
+function openPeer(uid,date){
+  peerUn.forEach(x=>x());peerUn=[];peer={uid,date,tasks:[],logs:[]};
+  if(uid&&fb){
+    const {F,db}=fb;
+    peerUn=[snap(F.query(F.collection(db,'tasks'),F.where('uid','==',uid)),s=>{peer.tasks=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+            snap(F.query(F.collection(db,'logs'),F.where('uid','==',uid),F.where('date','==',date)),s=>{peer.logs=s.docs.map(d=>({id:d.id,...d.data()}));refresh()})];
+  }
+  render();
 }
 function refresh(){if(document.activeElement?.matches('input,textarea,select'))return;render()}
 function loadLocal(){
@@ -158,16 +179,16 @@ async function logout(){
 /* ---------- Datos por usuario ---------- */
 async function addTask(title,time){
   const t={title,time,uid:me.uid,createdAt:today()};
-  if(fb)return fb.F.addDoc(fb.F.collection(fb.db,'tasks'),t);
+  if(fb)return W(fb.F.addDoc(fb.F.collection(fb.db,'tasks'),t));
   const all=LS('tasks',[]);all.push({id:'t'+Date.now(),...t});SV('tasks',all);loadLocal();render();
 }
 async function delTask(id){
-  if(fb)return fb.F.deleteDoc(fb.F.doc(fb.db,'tasks',id));
+  if(fb)return W(fb.F.deleteDoc(fb.F.doc(fb.db,'tasks',id)));
   SV('tasks',LS('tasks',[]).filter(t=>t.id!==id));loadLocal();render();
 }
 async function setLog(taskId,date,data){
   const id=date+'_'+taskId;
-  if(fb)return fb.F.setDoc(fb.F.doc(fb.db,'logs',id),{uid:me.uid,taskId,date,...data},{merge:true});
+  if(fb)return W(fb.F.setDoc(fb.F.doc(fb.db,'logs',id),{uid:me.uid,taskId,date,...data},{merge:true}));
   const all=LS('logs',[]),i=all.findIndex(l=>l.id===id);
   if(i<0)all.push({id,uid:me.uid,taskId,date,...data});else all[i]={...all[i],...data};
   SV('logs',all);loadLocal();render();
@@ -301,10 +322,10 @@ function render(){
     el.innerHTML=`<div style="display:flex;gap:12px;align-items:center">${av(me)}<div><h1>Hola, ${esc(me.name)}</h1><p class="sub cap">${new Date().toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})} · ${done}/${ts.length} listas</p></div></div>
     <div class="bar"><i style="width:${pct}%"></i></div>
     ${ts.map(t=>{const l=logOf(t.id,d);return`<div class="card ${l?.done?'done':''}" data-act="tap" data-id="${t.id}">
-      <div class="chk">${l?.done?'✓':''}</div><div class="t">${esc(t.title)}<small>${t.time?'⏰ '+t.time:'Sin hora'}${l?.done?'':' · toca para subir evidencia 📷'}</small></div>
+      <div class="chk">${l?.done?'✓':''}</div><div class="t">${esc(t.title)}<small>${t.time?'⏰ '+t12(t.time):'Sin hora'}${l?.done?'':' · toca para subir evidencia 📷'}</small></div>
       ${l?.img?`<img src="${l.img}" alt="evidencia">`:''}</div>`}).join('')||'<p class="empty">No tienes tareas. Agrega la primera 👇</p>'}
     <h2>Agregar tarea diaria</h2>
-    <input id="nt" placeholder="Ej: Estudiar 1 hora"><div class="row"><input id="nh" type="time"><button data-act="add">Agregar</button></div>
+    <input id="nt" placeholder="Ej: Estudiar 1 hora">${timePick('nh')}<button style="width:100%" data-act="add">Agregar</button>
     ${ts.length?`<h2>Quitar tareas</h2>${ts.map(t=>`<button class="g s" data-act="del" data-id="${t.id}" style="margin:0 6px 6px 0">✕ ${esc(t.title)}</button>`).join('')}`:''}`;
   }
   if(view==='pro'){
@@ -324,6 +345,20 @@ function render(){
       return`<div class="card" style="display:block"><b>${d}</b> <span class="sub">· ${ls.length}/${tasks.length} tareas</span>
       <div class="thumbs">${ls.map(l=>`<img src="${l.img}" data-act="zoom">`).join('')}</div>
       ${GITHUB.token?`<button class="s" style="margin-top:10px" data-act="gh" data-d="${d}">Subir a GitHub</button>`:''}</div>`}).join('')||'<p class="empty">Aún no hay tareas terminadas.</p>');
+  }
+  if(view==='usr'){
+    if(!peer.uid){
+      el.innerHTML=`<h1>Personas</h1><p class="sub">Toca a alguien para ver sus tareas y fotos</p><div style="height:12px"></div>`+(all.users.filter(u=>u.uid!==me.uid).map(u=>`<div class="card" data-act="peer" data-id="${u.uid}">${av(u)}<div class="t">${esc(u.name)}</div><span>›</span></div>`).join('')||'<p class="empty">Aún no hay otras personas registradas.</p>');
+    }else{
+      const u=all.users.find(x=>x.uid===peer.uid)||{name:'Usuario'},d=peer.date,td=today();
+      const pt=(fb?peer.tasks:all.tasks.filter(t=>t.uid===peer.uid)).filter(t=>!t.createdAt||t.createdAt<=d).sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));
+      const pl=fb?peer.logs:all.logs.filter(l=>l.uid===peer.uid&&l.date===d);
+      const lo=id=>pl.find(l=>l.taskId===id),dn=pt.filter(t=>lo(t.id)?.done).length;
+      el.innerHTML=`<button class="g s" data-act="peerback">‹ Volver</button>
+      <div style="display:flex;gap:12px;align-items:center;margin:12px 0">${av(u)}<div><h1>${esc(u.name)}</h1><p class="sub">${dn}/${pt.length} tareas hechas</p></div></div>
+      <div class="nav2"><button class="g" data-act="pstep" data-n="-1">‹</button><b>${d===td?'Hoy':d}</b><button class="g" data-act="pstep" data-n="1" ${d>=td?'disabled style="opacity:.3"':''}>›</button></div>
+      <div class="bar"><i style="width:${pt.length?dn/pt.length*100:0}%"></i></div>`+(pt.map(t=>{const l=lo(t.id);return`<div class="card ${l?.done?'done':''}"><div class="chk">${l?.done?'✓':''}</div><div class="t">${esc(t.title)}<small>${t.time?'⏰ '+t12(t.time):'Sin hora'}${l?.done?(l.at?' · hecha a las '+t12(l.at):''):' · sin completar'}</small></div>${l?.img?`<img src="${l.img}" data-act="zoom" alt="evidencia">`:''}</div>`}).join('')||'<p class="empty">⚠️ No tiene tareas registradas para este día.</p>');
+    }
   }
   if(view==='eq'){
     const d=today(),rows=all.users.map(u=>{
@@ -347,8 +382,8 @@ function render(){
     <h2>Nueva notificación</h2>
     <input id="ntt" placeholder="Título"><textarea id="ntb" rows="2" placeholder="Mensaje"></textarea>
     <div class="sw">${Object.entries(THEMES).map(([k,c],i)=>`<label><input type="radio" name="th" value="${k}" ${i?'':'checked'}><span style="background:${c}">${k}</span></label>`).join('')}</div>
-    <input id="ntm" type="time"><div class="row"><button class="g" data-act="now">Enviar ahora</button><button data-act="sched">Programar diaria</button></div>
-    <h2>Programadas</h2>${n.map((x,i)=>`<div class="card" style="border-left:6px solid ${THEMES[x.theme]}"><div class="t">${esc(x.title)}<small>${x.time} · ${esc(x.body)}</small></div><button class="g s" data-act="rm" data-i="${i}">✕</button></div>`).join('')||'<p class="empty">Sin notificaciones programadas.</p>'}`;
+    ${timePick('ntm')}<div class="row"><button class="g" data-act="now">Enviar ahora</button><button data-act="sched">Programar diaria</button></div>
+    <h2>Programadas</h2>${n.map((x,i)=>`<div class="card" style="border-left:6px solid ${THEMES[x.theme]}"><div class="t">${esc(x.title)}<small>${t12(x.time)} · ${esc(x.body)}</small></div><button class="g s" data-act="rm" data-i="${i}">✕</button></div>`).join('')||'<p class="empty">Sin notificaciones programadas.</p>'}`;
   }
   if(view==='aj'){
     el.innerHTML=`<h1>Ajustes</h1>
@@ -369,6 +404,9 @@ document.addEventListener('click',async e=>{
   if(a==='pick')enter(null,b.dataset.id);
   if(a==='avatar')$('#pfile').click();
   if(a==='savename'){const n=$('#pn').value.trim();if(n){await saveProfile(n);toast('Nombre actualizado','musgo')}}
+  if(a==='peer')openPeer(b.dataset.id,today());
+  if(a==='peerback')openPeer(null,null);
+  if(a==='pstep'){const x=new Date(peer.date+'T00:00:00');x.setDate(x.getDate()+ +b.dataset.n);const nd=fmt(x);if(nd<=today())openPeer(peer.uid,nd)}
   if(a==='logout')logout();
   if(a==='avisar'){draft.to=b.dataset.u;render();scrollTo(0,0)}
   if(a==='sendav'){
@@ -390,15 +428,15 @@ document.addEventListener('click',async e=>{
     if(l?.done){if(confirm('¿Desmarcar esta tarea?'))setLog(b.dataset.id,d,{done:false,img:null});}
     else{pending=b.dataset.id;$('#file').click()}
   }
-  if(a==='add'){const t=$('#nt').value.trim();if(t){await addTask(t,$('#nh').value);toast('Tarea agregada','musgo')}}
-  if(a==='del'&&confirm('¿Quitar tarea?'))delTask(b.dataset.id);
+  if(a==='add'){const t=$('#nt').value.trim();if(t){try{await addTask(t,readTime('nh'));toast('Tarea guardada','musgo')}catch(e){fbErr(e)}}}
+  if(a==='del'&&confirm('¿Quitar tarea?'))delTask(b.dataset.id).catch(fbErr);
   if(a==='gh')gh(b.dataset.d);
   if(a==='zoom'){$('#view img').src=b.src;$('#view').style.display='grid'}
   if(a==='now'||a==='sched'){
     const t=$('#ntt').value.trim()||'Aviso',m=$('#ntb').value.trim(),th=document.querySelector('[name=th]:checked').value;
     if(a==='now')fire(t,m,th);
-    else if(!$('#ntm').value)toast('Elige una hora','borgona');
-    else{const n=LS(nk(),[]);n.push({title:t,body:m,theme:th,time:$('#ntm').value});SV(nk(),n);toast('Programada ✔','musgo');render()}
+    else if(!readTime('ntm'))toast('Elige una hora','borgona');
+    else{const n=LS(nk(),[]);n.push({title:t,body:m,theme:th,time:readTime('ntm')});SV(nk(),n);toast('Programada ✔','musgo');render()}
   }
   if(a==='rm'){const n=LS(nk(),[]);n.splice(+b.dataset.i,1);SV(nk(),n);render()}
   if(a==='perm'){const r=await Notification.requestPermission();toast(r==='granted'?'Avisos activados':'Avisos bloqueados',r==='granted'?'musgo':'borgona')}
@@ -411,7 +449,7 @@ $('#file').addEventListener('change',async e=>{
   try{
     const img=await upload(f,id,d);
     await setLog(id,d,{done:true,img,at:hhmm()});toast('¡Tarea terminada! 🍁','musgo');
-  }catch(err){toast('No se pudo subir: '+err.message,'borgona')}
+  }catch(err){fbErr(err)}
 });
 $('#pfile').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
