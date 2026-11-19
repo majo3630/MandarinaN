@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a0f0a">
+<title>Tareas de Otoño</title>
+<style>
+:root{--bg:#1a0f0a;--card:#2a1810;--line:#4a2e1f;--cream:#f5e6d3;--mute:#b89a82;--calabaza:#e8751a;--ambar:#f2a93b;--borgona:#8c2f39;--musgo:#6b7a3a;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--cream);font:16px/1.4 system-ui,sans-serif;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+main{max-width:520px;margin:auto;padding:16px}
+h1{font-size:24px;color:var(--ambar)}h2{font-size:15px;color:var(--mute);margin:16px 0 8px;font-weight:600}
+.sub{color:var(--mute);font-size:14px}.cap{text-transform:capitalize}
+.bar{height:8px;background:var(--line);border-radius:8px;margin:12px 0;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--calabaza),var(--ambar));transition:width .4s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center}
+.chk{width:30px;height:30px;border-radius:50%;border:2px solid var(--calabaza);flex:none;display:grid;place-items:center;font-size:16px}
+.done .chk{background:var(--musgo);border-color:var(--musgo)}
+.done .t{text-decoration:line-through;opacity:.7}
+.t{flex:1}.t small{display:block;color:var(--mute)}
+.card img{width:48px;height:48px;object-fit:cover;border-radius:10px}
+input,textarea,select{width:100%;background:var(--card);border:1px solid var(--line);color:var(--cream);border-radius:12px;padding:12px;font:inherit;margin-bottom:8px}
+button{background:var(--calabaza);color:#1a0f0a;border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:700}
+button.g{background:var(--line);color:var(--cream)}button.s{padding:8px 12px;font-size:14px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;color:var(--mute);border-radius:0;padding:12px 2px;font-size:10px}
+nav button.on{color:var(--ambar)}
+.sw{display:flex;gap:10px;margin-bottom:10px}.sw label{flex:1;height:40px;font-size:12px;font-weight:700;color:#1a0f0a}
+.sw input{display:none}.sw input:checked+span{outline:3px solid var(--cream);outline-offset:2px}
+.sw label span{width:100%;height:100%;border-radius:10px;display:grid;place-items:center}
+#toast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:12px;right:12px;padding:14px;border-radius:14px;font-weight:700;color:#1a0f0a;z-index:9;transform:translateY(-160%);transition:transform .35s;box-shadow:0 8px 24px #0008}
+#toast.show{transform:none}
+.thumbs{display:flex;gap:6px;overflow-x:auto;margin-top:6px}.thumbs img{width:44px;height:44px;border-radius:8px;object-fit:cover}
+.empty{color:var(--mute);text-align:center;padding:24px}
+#view{position:fixed;inset:0;background:#000d;display:none;place-items:center;z-index:8}#view img{max-width:92%;max-height:80%;border-radius:12px}
+.seg{display:flex;background:var(--card);border-radius:12px;padding:4px;margin:14px 0}.seg button{flex:1;background:none;color:var(--mute);padding:8px}.seg button.on{background:var(--calabaza);color:#1a0f0a}
+.nav2{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.nav2 button{padding:6px 14px}
+.big{font-size:56px;font-weight:800;color:var(--ambar);line-height:1}
+.chart{display:flex;gap:3px;height:150px;margin-top:16px}
+.col{flex:1;display:flex;flex-direction:column;min-width:0}.bw{flex:1;display:flex;align-items:flex-end}
+.col i{display:block;width:100%;min-height:3px;background:linear-gradient(0deg,var(--calabaza),var(--ambar));border-radius:4px 4px 0 0}
+.col i.nil{background:var(--line)}.col span{font-size:9px;color:var(--mute);height:14px;text-align:center;margin-top:3px;overflow:hidden}
+.av{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--line);display:flex;align-items:center;justify-content:center;flex:none;font-weight:800;color:var(--ambar)}
+.card img.av{width:44px;height:44px;border-radius:50%}
+.av.big,.card img.av.big{width:96px;height:96px;font-size:38px;margin:auto}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<main id="app"></main>
+<nav id="nav" style="display:none">
+ <button data-v="hoy" class="on">🍂<br>Hoy</button>
+ <button data-v="pro">📈<br>Progreso</button>
+ <button data-v="reg">📒<br>Registro</button>
+ <button data-v="eq" id="eqb" style="display:none">👥<br>Equipo</button>
+ <button data-v="not">🔔<br>Alertas</button>
+ <button data-v="aj">⚙️<br>Ajustes</button>
+</nav>
+<input type="file" id="file" accept="image/*" capture="environment" hidden>
+<input type="file" id="pfile" accept="image/*" hidden>
+<div id="view" onclick="this.style.display='none'"><img></div>
+
+<script type="module">
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const SV=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const THEMES={calabaza:'#e8751a',ambar:'#f2a93b',borgona:'#c4505c',musgo:'#8fa04a'};
+/* ===== TUS DATOS: pega aquí el firebaseConfig de la app web (NO la clave de servicio) ===== */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyChBfufHiwa6cDOjIkDv66rtoimcixPefs",
+  authDomain:"mandarinanotas.firebaseapp.com",
+  projectId:"mandarinanotas",
+  storageBucket:"mandarinanotas.firebasestorage.app",
+  messagingSenderId:"578281064114",
+  appId:"1:578281064114:web:1aeba7ebc224224da26bab"
+};
+const GITHUB={owner:'',repo:'',token:''}; // opcional; el botón de GitHub solo aparece si hay token
+const fmt=d=>d.toLocaleDateString('en-CA');
+const today=()=>fmt(new Date());
+const hhmm=()=>new Date().toTimeString().slice(0,5);
+
+let all={users:[],tasks:[],logs:[]},draft={},me=null,ready=false,tasks=[],logs=[],fb=null,unsubs=[],view='hoy',pending=null,authMode='login',per='sem',off=0;
+
+/* ---------- Inicio y usuarios ---------- */
+async function init(){
+  const cfg=FIREBASE_CONFIG;
+  if(cfg){
+    try{
+      const b='https://www.gstatic.com/firebasejs/10.12.2/';
+      const [A,F,S,U]=await Promise.all([import(b+'firebase-app.js'),import(b+'firebase-firestore.js'),import(b+'firebase-storage.js'),import(b+'firebase-auth.js')]);
+      const app=A.initializeApp(cfg);
+      fb={F,S,U,db:F.getFirestore(app),st:S.getStorage(app),auth:U.getAuth(app)};
+      U.onAuthStateChanged(fb.auth,u=>{
+        unsubs.forEach(x=>x());unsubs=[];tasks=[];logs=[];all={users:[],tasks:[],logs:[]};
+        me=u?{uid:u.uid,name:u.displayName||'Usuario',photo:'',admin:false}:null;
+        if(me){
+          subscribe();
+        }
+        ready=true;render();
+      });
+    }catch(e){fb=null;toast('Error con Firebase: '+e.message,'borgona')}
+  }
+  if(!fb){me=LS('me',null);if(me)loadLocal();ready=true;render()}
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+function subscribe(){
+  const {F,db}=fb;
+  const q=n=>F.query(F.collection(db,n),F.where('uid','==',me.uid));
+  unsubs=[F.onSnapshot(q('tasks'),s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+          F.onSnapshot(q('logs'),s=>{logs=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+          F.onSnapshot(F.query(F.collection(db,'avisos'),F.where('toUid','==',me.uid),F.where('seen','==',false)),s=>s.docChanges().forEach(c=>{
+            if(c.type==='added'){const x=c.doc.data();fire(x.title,x.body,x.theme);F.updateDoc(c.doc.ref,{seen:true})}})),
+          F.onSnapshot(F.doc(db,'users',me.uid),s=>{const x=s.data()||{};if(x.name)me.name=x.name;me.photo=x.photo||'';const a=!!x.admin;if(a&&!me.admin){me.admin=true;subAdmin()}if(!a)me.admin=false;refresh()})];
+}
+function subAdmin(){
+  const {F,db}=fb;
+  ['users','tasks','logs'].forEach(n=>unsubs.push(F.onSnapshot(F.collection(db,n),s=>{all[n]=s.docs.map(d=>({id:d.id,...d.data()}));refresh()})));
+}
+function refresh(){if(document.activeElement?.matches('input,textarea,select'))return;render()}
+function loadLocal(){
+  all={users:LS('users',[]),tasks:LS('tasks',[]),logs:LS('logs',[])};
+  if(all.users.length&&!all.users.some(u=>u.admin)){all.users[0].admin=true;SV('users',all.users)}
+  me.admin=!!all.users.find(u=>u.uid===me.uid)?.admin;
+  const mu=all.users.find(u=>u.uid===me.uid);if(mu){me.name=mu.name;me.photo=mu.photo||''}
+  tasks=all.tasks.filter(t=>t.uid===me.uid);logs=all.logs.filter(l=>l.uid===me.uid);
+}
+async function enter(name,existing){
+  if(fb){
+    const c=await fb.U.signInAnonymously(fb.auth);
+    await fb.U.updateProfile(c.user,{displayName:name});
+    await fb.F.setDoc(fb.F.doc(fb.db,'users',c.user.uid),{uid:c.user.uid,name,photo:''},{merge:true});
+    return;
+  }
+  const users=LS('users',[]);let u=existing&&users.find(x=>x.uid===existing);
+  if(!u){u={uid:'u'+Date.now(),name,photo:'',admin:users.length===0};users.push(u);SV('users',users)}
+  me={uid:u.uid,name:u.name,photo:u.photo||'',admin:!!u.admin};SV('me',me);loadLocal();view='hoy';render();
+}
+async function saveProfile(name,photo){
+  if(name!=null)me.name=name;if(photo!=null)me.photo=photo;
+  if(fb){
+    await fb.F.setDoc(fb.F.doc(fb.db,'users',me.uid),{name:me.name,photo:me.photo||''},{merge:true});
+    fb.U.updateProfile(fb.auth.currentUser,{displayName:me.name}).catch(()=>{});
+  }else{
+    const u=LS('users',[]).map(x=>x.uid===me.uid?{...x,name:me.name,photo:me.photo||''}:x);SV('users',u);SV('me',me);loadLocal();
+  }
+  render();
+}
+async function logout(){
+  if(fb){if(!confirm('Si sales, solo podrás volver a entrar creando otro perfil. ¿Salir?'))return;return fb.U.signOut(fb.auth)}
+  me=null;tasks=[];logs=[];localStorage.removeItem('me');render();
+}
+
+/* ---------- Datos por usuario ---------- */
+async function addTask(title,time){
+  const t={title,time,uid:me.uid,createdAt:today()};
+  if(fb)return fb.F.addDoc(fb.F.collection(fb.db,'tasks'),t);
+  const all=LS('tasks',[]);all.push({id:'t'+Date.now(),...t});SV('tasks',all);loadLocal();render();
+}
+async function delTask(id){
+  if(fb)return fb.F.deleteDoc(fb.F.doc(fb.db,'tasks',id));
+  SV('tasks',LS('tasks',[]).filter(t=>t.id!==id));loadLocal();render();
+}
+async function setLog(taskId,date,data){
+  const id=date+'_'+taskId;
+  if(fb)return fb.F.setDoc(fb.F.doc(fb.db,'logs',id),{uid:me.uid,taskId,date,...data},{merge:true});
+  const all=LS('logs',[]),i=all.findIndex(l=>l.id===id);
+  if(i<0)all.push({id,uid:me.uid,taskId,date,...data});else all[i]={...all[i],...data};
+  SV('logs',all);loadLocal();render();
+}
+function compress(file,max=1000,q=.72){
+  return new Promise(res=>{
+    const img=new Image();img.onload=()=>{
+      const k=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      c.toBlob(res,'image/jpeg',q);
+    };img.src=URL.createObjectURL(file);
+  });
+}
+const toUrl=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function upload(file,taskId,date){
+  // La foto se guarda reducida dentro de Firestore: no necesita Storage ni plan de pago.
+  const url=await toUrl(await compress(file,800,.65));
+  if(url.length>900000)throw new Error('La foto es muy pesada, intenta con otra');
+  return url;
+}
+
+/* ---------- Avisos ---------- */
+function toast(msg,theme='calabaza'){
+  const t=$('#toast');t.textContent=msg;t.style.background=THEMES[theme]||THEMES.calabaza;
+  t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),5000);
+}
+async function sys(title,body){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{const r=await navigator.serviceWorker.getRegistration();r?r.showNotification(title,{body,tag:title}):new Notification(title,{body})}
+  catch{try{new Notification(title,{body})}catch{}}
+}
+async function sendAviso(toUid,title,body,theme){
+  const a={toUid,title,body,theme,seen:false,from:me.name,at:Date.now()};
+  if(fb)return fb.F.addDoc(fb.F.collection(fb.db,'avisos'),a);
+  const all2=LS('avisos',[]);all2.push({id:'a'+Date.now()+Math.random(),...a});SV('avisos',all2);
+}
+function checkAvisos(){
+  if(fb||!me)return;
+  const l=LS('avisos',[]);let ch=false;
+  l.forEach(x=>{if(x.toUid===me.uid&&!x.seen){x.seen=true;ch=true;fire(x.title,x.body,x.theme)}});
+  if(ch)SV('avisos',l);
+}
+function fire(title,body,theme){toast(`${title}${body?' · '+body:''}`,theme);sys(title,body)}
+const nk=()=>'notifs_'+me.uid;
+setInterval(()=>{
+  if(!me)return;
+  if(!fb){loadLocal();checkAvisos();if(view==='eq')refresh()}
+  const now=hhmm(),d=today(),n=LS(nk(),[]);let ch=false;
+  n.forEach(x=>{if(x.time===now&&x.last!==d){x.last=d;ch=true;fire(x.title,x.body,x.theme)}});
+  if(ch)SV(nk(),n);
+  const fk='fired_'+me.uid+'_'+d,fired=LS(fk,[]);
+  tasks.forEach(t=>{
+    if(t.time===now&&!fired.includes(t.id)&&!logs.find(l=>l.taskId===t.id&&l.date===d&&l.done)){
+      fired.push(t.id);SV(fk,fired);fire('Tarea pendiente',t.title,'ambar');
+    }
+  });
+},20000);
+
+/* ---------- GitHub ---------- */
+async function gh(date){
+  const g=GITHUB;
+  if(!g.token||!g.owner||!g.repo)return toast('GitHub no está configurado','borgona');
+  const data=tasks.map(t=>{const l=logs.find(x=>x.taskId===t.id&&x.date===date);
+    return{tarea:t.title,hecha:!!l?.done,hora:l?.at||null,evidencia:l?.img&&!l.img.startsWith('data:')?l.img:null}});
+  const slug=(me.name.toLowerCase().replace(/[^a-z0-9]/g,'')||'usuario')+'-'+me.uid.slice(-4);
+  const u=`https://api.github.com/repos/${g.owner}/${g.repo}/contents/registro/${slug}/${date}.json`;
+  const h={Authorization:'Bearer '+g.token,Accept:'application/vnd.github+json'};
+  try{
+    const r=await fetch(u,{headers:h});const s=r.ok?(await r.json()).sha:undefined;
+    const p=await fetch(u,{method:'PUT',headers:h,body:JSON.stringify({message:`Registro ${slug} ${date}`,sha:s,
+      content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))))})});
+    toast(p.ok?'Registro subido a GitHub ✔':'GitHub respondió '+p.status,p.ok?'musgo':'borgona');
+  }catch(e){toast('Sin conexión con GitHub','borgona')}
+}
+
+/* ---------- Progreso ---------- */
+function groups(){
+  const t=new Date();t.setHours(0,0,0,0);
+  const day=(y,m,d)=>fmt(new Date(y,m,d));
+  if(per==='sem'){
+    const s=new Date(t);s.setDate(t.getDate()-((t.getDay()+6)%7)+off*7);
+    const ds=[...Array(7)].map((_,i)=>{const x=new Date(s);x.setDate(s.getDate()+i);return x});
+    return{title:`${fmt(ds[0]).slice(5)} al ${fmt(ds[6]).slice(5)}`,g:ds.map(x=>({l:x.toLocaleDateString('es',{weekday:'short'}).slice(0,2),days:[fmt(x)]}))};
+  }
+  if(per==='mes'){
+    const f=new Date(t.getFullYear(),t.getMonth()+off,1),n=new Date(f.getFullYear(),f.getMonth()+1,0).getDate();
+    return{title:f.toLocaleDateString('es',{month:'long',year:'numeric'}),g:[...Array(n)].map((_,i)=>({l:(i+1)%5===1?String(i+1):'',days:[day(f.getFullYear(),f.getMonth(),i+1)]}))};
+  }
+  const y=t.getFullYear()+off;
+  return{title:String(y),g:[...Array(12)].map((_,m)=>{const n=new Date(y,m+1,0).getDate();
+    return{l:new Date(y,m,1).toLocaleDateString('es',{month:'short'}).slice(0,3),days:[...Array(n)].map((_,i)=>day(y,m,i+1))}})};
+}
+function stats(){
+  const {title,g}=groups(),td=today();let D=0,E=0;
+  const out=g.map(x=>{let d=0,e=0;
+    x.days.forEach(ds=>{if(ds>td)return;
+      e+=tasks.filter(t=>!t.createdAt||t.createdAt<=ds).length;
+      d+=logs.filter(l=>l.date===ds&&l.done&&tasks.some(t=>t.id===l.taskId)).length});
+    D+=d;E+=e;return{l:x.l,p:e?Math.round(Math.min(d,e)/e*100):null}});
+  return{title,out,D,E,pct:E?Math.round(Math.min(D,E)/E*100):0};
+}
+
+/* ---------- Pantallas ---------- */
+const logOf=(id,d)=>logs.find(l=>l.taskId===id&&l.date===d);
+const av=(u,c='')=>u?.photo?`<img class="av ${c}" src="${u.photo}" alt="foto">`:`<div class="av ${c}">${esc((u?.name||'?')[0].toUpperCase())}</div>`;
+function pendHtml(){
+  const {g}=groups(),td=today(),out=[];
+  g.forEach(x=>x.days.forEach(ds=>{if(ds>td)return;
+    tasks.filter(t=>(!t.createdAt||t.createdAt<=ds)&&!logs.find(l=>l.taskId===t.id&&l.date===ds&&l.done)).forEach(t=>out.push({d:ds,t:t.title}))}));
+  out.sort((a,b)=>b.d.localeCompare(a.d));
+  return`<h2>Tareas sin completar (${out.length})</h2>`+(out.slice(0,40).map(x=>`<div class="card" style="border-left:6px solid ${x.d===td?'var(--ambar)':'var(--borgona)'}"><div class="t">${esc(x.t)}<small>${x.d===td?'Hoy · aún pendiente':x.d}</small></div></div>`).join('')||'<p class="empty">¡Completaste todo en este periodo! 🎉</p>')+(out.length>40?'<p class="sub">Mostrando las 40 más recientes.</p>':'');
+}
+function render(){
+  const el=$('#app'),nav=$('#nav');
+  nav.style.display=me?'flex':'none';
+  $('#eqb').style.display=me?.admin?'':'none';
+  if(!ready){el.innerHTML='<p class="empty">Cargando…</p>';return}
+  if(!me){
+    const lu=fb?[]:LS('users',[]);
+    el.innerHTML=`<h1 style="margin-top:40px">🍂 Tareas de Otoño</h1><p class="sub">Escribe tu nombre para empezar</p><div style="height:16px"></div>
+    <input id="an" placeholder="Tu nombre"><button style="width:100%" data-act="enter">Entrar</button>
+    ${lu.length?`<h2>Perfiles en este celular</h2>${lu.map(u=>`<div class="card" data-act="pick" data-id="${u.uid}">${av(u)}<div class="t">${esc(u.name)}</div></div>`).join('')}`:''}
+    ${fb?'':'<p class="sub">Modo local: los perfiles solo viven en este celular. Conecta Firebase para compartir usuarios entre celulares.</p>'}`;
+    return;
+  }
+  if(view==='eq'&&!me.admin)view='hoy';
+  if(view==='hoy'){
+    const d=today(),ts=[...tasks].sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));
+    const done=ts.filter(t=>logOf(t.id,d)?.done).length,pct=ts.length?done/ts.length*100:0;
+    el.innerHTML=`<div style="display:flex;gap:12px;align-items:center">${av(me)}<div><h1>Hola, ${esc(me.name)}</h1><p class="sub cap">${new Date().toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})} · ${done}/${ts.length} listas</p></div></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    ${ts.map(t=>{const l=logOf(t.id,d);return`<div class="card ${l?.done?'done':''}" data-act="tap" data-id="${t.id}">
+      <div class="chk">${l?.done?'✓':''}</div><div class="t">${esc(t.title)}<small>${t.time?'⏰ '+t.time:'Sin hora'}${l?.done?'':' · toca para subir evidencia 📷'}</small></div>
+      ${l?.img?`<img src="${l.img}" alt="evidencia">`:''}</div>`}).join('')||'<p class="empty">No tienes tareas. Agrega la primera 👇</p>'}
+    <h2>Agregar tarea diaria</h2>
+    <input id="nt" placeholder="Ej: Estudiar 1 hora"><div class="row"><input id="nh" type="time"><button data-act="add">Agregar</button></div>
+    ${ts.length?`<h2>Quitar tareas</h2>${ts.map(t=>`<button class="g s" data-act="del" data-id="${t.id}" style="margin:0 6px 6px 0">✕ ${esc(t.title)}</button>`).join('')}`:''}`;
+  }
+  if(view==='pro'){
+    const s=stats();
+    el.innerHTML=`<h1>Mi progreso</h1>
+    <div class="seg">${[['sem','Semana'],['mes','Mes'],['ano','Año']].map(([k,n])=>`<button class="${per===k?'on':''}" data-act="per" data-p="${k}">${n}</button>`).join('')}</div>
+    <div class="nav2"><button class="g" data-act="step" data-n="-1">‹</button><b class="cap">${s.title}</b><button class="g" data-act="step" data-n="1" ${off>=0?'disabled style="opacity:.3"':''}>›</button></div>
+    <div class="card" style="display:block"><div class="big">${s.pct}%</div><p class="sub">${s.D} de ${s.E} tareas completadas</p>
+    <div class="bar"><i style="width:${s.pct}%"></i></div>
+    <div class="chart">${s.out.map(x=>`<div class="col"><div class="bw"><i class="${x.p==null?'nil':''}" style="height:${x.p??0}%"></i></div><span>${x.l}</span></div>`).join('')}</div></div>
+    ${tasks.length?pendHtml():'<p class="empty">Agrega tareas en la pestaña Hoy para ver tu progreso.</p>'}`;
+  }
+  if(view==='reg'){
+    const ds=[...new Set(logs.filter(l=>l.done).map(l=>l.date))].sort().reverse();
+    el.innerHTML=`<h1>Registro</h1><p class="sub">Historial de evidencias</p><div style="height:12px"></div>`+(ds.map(d=>{
+      const ls=logs.filter(l=>l.date===d&&l.done);
+      return`<div class="card" style="display:block"><b>${d}</b> <span class="sub">· ${ls.length}/${tasks.length} tareas</span>
+      <div class="thumbs">${ls.map(l=>`<img src="${l.img}" data-act="zoom">`).join('')}</div>
+      ${GITHUB.token?`<button class="s" style="margin-top:10px" data-act="gh" data-d="${d}">Subir a GitHub</button>`:''}</div>`}).join('')||'<p class="empty">Aún no hay tareas terminadas.</p>');
+  }
+  if(view==='eq'){
+    const d=today(),rows=all.users.map(u=>{
+      const ts=all.tasks.filter(t=>t.uid===u.uid&&(!t.createdAt||t.createdAt<=d));
+      const dn=ts.filter(t=>all.logs.some(l=>l.uid===u.uid&&l.taskId===t.id&&l.date===d&&l.done));
+      return{u,ts,dn,pend:ts.filter(t=>!dn.includes(t))}});
+    const th=draft.th||'calabaza';
+    el.innerHTML=`<h1>Equipo</h1><p class="sub">Avance de hoy y avisos personalizados</p>
+    <h2>Enviar aviso a una persona</h2>
+    <select id="av-to"><option value="">Elige usuario…</option>${all.users.map(u=>`<option value="${u.uid}" ${draft.to===u.uid?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
+    <input id="av-t" placeholder="Título" value="${esc(draft.t)}"><textarea id="av-b" rows="2" placeholder="Mensaje">${esc(draft.b)}</textarea>
+    <div class="sw">${Object.entries(THEMES).map(([k,c])=>`<label><input type="radio" name="ath" value="${k}" ${k===th?'checked':''}><span style="background:${c}">${k}</span></label>`).join('')}</div>
+    <div class="row"><button data-act="sendav">Enviar aviso</button><button class="g" data-act="remind">Recordar pendientes</button></div>
+    <h2>Avance de hoy</h2>${rows.map(r=>`<div class="card" style="display:block">
+      <div class="row" style="align-items:center"><div style="display:flex;gap:10px;align-items:center">${av(r.u)}<b>${esc(r.u.name)}</b></div><button class="g s" style="flex:none" data-act="avisar" data-u="${r.u.uid}">Avisar</button></div>
+      ${r.ts.length?`<div class="bar"><i style="width:${r.dn.length/r.ts.length*100}%"></i></div><p class="sub">${r.dn.length}/${r.ts.length} hechas${r.pend.length?' · ⏳ Pendientes: '+r.pend.map(t=>esc(t.title)).join(', '):' · ¡todo listo! 🍁'}</p>`:'<p class="sub">⚠️ No ha registrado tareas</p>'}</div>`).join('')||'<p class="empty">Aún no hay usuarios.</p>'}`;
+  }
+  if(view==='not'){
+    const n=LS(nk(),[]);
+    el.innerHTML=`<h1>Notificaciones</h1><p class="sub">Crea avisos con colores de otoño</p>
+    <h2>Nueva notificación</h2>
+    <input id="ntt" placeholder="Título"><textarea id="ntb" rows="2" placeholder="Mensaje"></textarea>
+    <div class="sw">${Object.entries(THEMES).map(([k,c],i)=>`<label><input type="radio" name="th" value="${k}" ${i?'':'checked'}><span style="background:${c}">${k}</span></label>`).join('')}</div>
+    <input id="ntm" type="time"><div class="row"><button class="g" data-act="now">Enviar ahora</button><button data-act="sched">Programar diaria</button></div>
+    <h2>Programadas</h2>${n.map((x,i)=>`<div class="card" style="border-left:6px solid ${THEMES[x.theme]}"><div class="t">${esc(x.title)}<small>${x.time} · ${esc(x.body)}</small></div><button class="g s" data-act="rm" data-i="${i}">✕</button></div>`).join('')||'<p class="empty">Sin notificaciones programadas.</p>'}`;
+  }
+  if(view==='aj'){
+    el.innerHTML=`<h1>Ajustes</h1>
+    <div style="text-align:center;margin:16px 0" data-act="avatar">${av(me,'big')}<p class="sub" style="margin-top:6px">Toca la foto para cambiarla 📷</p></div>
+    <input id="pn" value="${esc(me.name)}" placeholder="Tu nombre"><div class="row"><button data-act="savename">Guardar nombre</button><button class="g" data-act="logout">Salir</button></div>
+    <h2>Avisos</h2><button class="g" style="width:100%" data-act="perm">Permitir avisos</button>
+    <p class="sub" style="margin-top:12px">${fb?'🟢 Conectado a Firebase':'🟠 Modo local (sin Firebase)'}</p>`;
+  }
+  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+}
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click',async e=>{
+  const nv=e.target.closest('#nav button');if(nv){view=nv.dataset.v;return render()}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act,d=today();
+  if(a==='enter'){const nm=$('#an').value.trim();if(!nm)return toast('Escribe tu nombre','borgona');try{await enter(nm)}catch(err){toast(err.message,'borgona')}}
+  if(a==='pick')enter(null,b.dataset.id);
+  if(a==='avatar')$('#pfile').click();
+  if(a==='savename'){const n=$('#pn').value.trim();if(n){await saveProfile(n);toast('Nombre actualizado','musgo')}}
+  if(a==='logout')logout();
+  if(a==='avisar'){draft.to=b.dataset.u;render();scrollTo(0,0)}
+  if(a==='sendav'){
+    if(!draft.to||!(draft.t||draft.b))return toast('Elige usuario y escribe el aviso','borgona');
+    await sendAviso(draft.to,draft.t||'Aviso',draft.b||'',draft.th||'calabaza');toast('Aviso enviado ✔','musgo');draft={};render();
+  }
+  if(a==='remind'){
+    let n=0;
+    for(const u of all.users){
+      const p=all.tasks.filter(t=>t.uid===u.uid&&(!t.createdAt||t.createdAt<=d)&&!all.logs.some(l=>l.uid===u.uid&&l.taskId===t.id&&l.date===d&&l.done)).length;
+      if(p){await sendAviso(u.uid,'Tareas pendientes',`Tienes ${p} tarea(s) por terminar hoy`,'ambar');n++}
+    }
+    toast(n?`Recordatorio enviado a ${n} persona(s)`:'Nadie tiene pendientes','musgo');
+  }
+  if(a==='per'){per=b.dataset.p;off=0;render()}
+  if(a==='step'){off+=+b.dataset.n;if(off>0)off=0;render()}
+  if(a==='tap'){
+    const l=logOf(b.dataset.id,d);
+    if(l?.done){if(confirm('¿Desmarcar esta tarea?'))setLog(b.dataset.id,d,{done:false,img:null});}
+    else{pending=b.dataset.id;$('#file').click()}
+  }
+  if(a==='add'){const t=$('#nt').value.trim();if(t){await addTask(t,$('#nh').value);toast('Tarea agregada','musgo')}}
+  if(a==='del'&&confirm('¿Quitar tarea?'))delTask(b.dataset.id);
+  if(a==='gh')gh(b.dataset.d);
+  if(a==='zoom'){$('#view img').src=b.src;$('#view').style.display='grid'}
+  if(a==='now'||a==='sched'){
+    const t=$('#ntt').value.trim()||'Aviso',m=$('#ntb').value.trim(),th=document.querySelector('[name=th]:checked').value;
+    if(a==='now')fire(t,m,th);
+    else if(!$('#ntm').value)toast('Elige una hora','borgona');
+    else{const n=LS(nk(),[]);n.push({title:t,body:m,theme:th,time:$('#ntm').value});SV(nk(),n);toast('Programada ✔','musgo');render()}
+  }
+  if(a==='rm'){const n=LS(nk(),[]);n.splice(+b.dataset.i,1);SV(nk(),n);render()}
+  if(a==='perm'){const r=await Notification.requestPermission();toast(r==='granted'?'Avisos activados':'Avisos bloqueados',r==='granted'?'musgo':'borgona')}
+});
+document.addEventListener('input',e=>{const i=e.target.id;if(i==='av-to')draft.to=e.target.value;if(i==='av-t')draft.t=e.target.value;if(i==='av-b')draft.b=e.target.value});
+document.addEventListener('change',e=>{if(e.target.name==='ath')draft.th=e.target.value});
+$('#file').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f||!pending)return;
+  const id=pending,d=today();pending=null;toast('Subiendo evidencia…','ambar');
+  try{
+    const img=await upload(f,id,d);
+    await setLog(id,d,{done:true,img,at:hhmm()});toast('¡Tarea terminada! 🍁','musgo');
+  }catch(err){toast('No se pudo subir: '+err.message,'borgona')}
+});
+$('#pfile').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{await saveProfile(null,await toUrl(await compress(f,256,.8)));toast('Foto actualizada','musgo')}catch(err){toast(err.message,'borgona')}
+});
+init();
+</script>
+</body>
+</html>
