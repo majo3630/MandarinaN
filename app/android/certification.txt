@@ -1,6 +1,6 @@
 ---------------------------------------------------
 Here are the ownership and the certification details
-of the Mandarina Notas 1.0
+of the Mandarina Notas 3.0
 ---------------------------------------------------
 
 app_name - 						Mandarina Notas
@@ -12,12 +12,12 @@ app_author_locality - 			My Company
 app_author_state - 				Distrito Capital de Bogota
 app_author_country - 			Colombia
 app_password - 					dC0EAX1QxexP
-app_versionName - 				versionName "1.0"
-app_versionCode - 				100
+app_versionName - 				versionName "3.0"
+app_versionCode - 				300
 
 ---------------------------------------------------
 The certification was created by WebIntoApp.com at
-the Thursday 19th of November 2026 04:17:37 AM
+the Monday 23rd of November 2026 11:50:42 PM
 
 https://webintoapp.com
 ---------------------------------------------------
