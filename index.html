@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1a0f0a">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Tareas de Otoño</title>
 <style>
 :root{--bg:#1a0f0a;--card:#2a1810;--line:#4a2e1f;--cream:#f5e6d3;--mute:#b89a82;--calabaza:#e8751a;--ambar:#f2a93b;--borgona:#8c2f39;--musgo:#6b7a3a;
@@ -22,6 +24,7 @@ h1{font-size:24px;color:var(--ambar)}h2{font-size:15px;color:var(--mute);margin:
 .done .t{text-decoration:line-through;opacity:.7}
 .t{flex:1}.t small{display:block;color:var(--mute)}
 .card img{width:48px;height:48px;object-fit:cover;border-radius:10px}
+input[type=time]{color-scheme:dark;min-height:48px;font-size:20px;text-align:center}
 input,textarea,select{width:100%;background:var(--card);border:1px solid var(--line);color:var(--cream);border-radius:12px;padding:12px;font:inherit;margin-bottom:8px}
 button{background:var(--calabaza);color:#1a0f0a;border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:700}
 button.g{background:var(--line);color:var(--cream)}button.s{padding:8px 12px;font-size:14px}
@@ -47,6 +50,24 @@ nav button.on{color:var(--ambar)}
 .av{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--line);display:flex;align-items:center;justify-content:center;flex:none;font-weight:800;color:var(--ambar)}
 .card img.av{width:44px;height:44px;border-radius:50%}
 .av.big,.card img.av.big{width:96px;height:96px;font-size:38px;margin:auto}
+.rg{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.rg .top{display:flex;gap:10px;align-items:center}
+.rg img{width:48px;height:48px;object-fit:cover;border-radius:10px}
+.card.bad{background:rgba(255,45,70,.2);border-color:#ff4757;box-shadow:0 0 16px rgba(255,71,87,.6),inset 0 0 12px rgba(255,71,87,.25)}
+.card.warn{border-color:var(--ambar);background:rgba(242,169,59,.12)}
+.card.ok{border-color:var(--musgo)}
+.face{font-size:28px;line-height:1;flex:none;width:34px;text-align:center}
+.tp{width:100%;margin-bottom:8px;text-align:left}
+#clk{position:fixed;inset:0;background:#000c;display:none;place-items:center;z-index:10;padding:16px}
+.cb{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px;width:100%;max-width:340px}
+.ct{font-size:12px;color:var(--mute);letter-spacing:1px;margin-bottom:10px}
+.cd{display:flex;align-items:center;justify-content:center;gap:4px;font-size:52px;font-weight:800;margin-bottom:14px;line-height:1}
+.cd span{padding:6px 12px;border-radius:12px;background:var(--line);color:var(--cream)}
+.cd span.on{background:var(--calabaza);color:#1a0f0a}
+.ap{display:flex;flex-direction:column;gap:4px;margin-left:8px}
+.ap button{padding:6px 10px;font-size:14px;background:var(--line);color:var(--cream)}
+.ap button.on{background:var(--calabaza);color:#1a0f0a}
+#cf{width:100%;max-width:260px;display:block;margin:0 auto 14px;touch-action:none}
 </style>
 </head>
 <body>
@@ -58,16 +79,22 @@ nav button.on{color:var(--ambar)}
  <button data-v="reg">📒<br>Registro</button>
  <button data-v="usr">👥<br>Personas</button>
  <button data-v="eq" id="eqb" style="display:none">👥<br>Equipo</button>
- <button data-v="not">🔔<br>Alertas</button>
  <button data-v="aj">⚙️<br>Ajustes</button>
 </nav>
 <input type="file" id="file" accept="image/*" capture="environment" hidden>
 <input type="file" id="pfile" accept="image/*" hidden>
 <div id="view" onclick="this.style.display='none'"><img></div>
+<div id="clk"><div class="cb"><div class="ct">SELECCIONA LA HORA</div>
+<div class="cd"><span id="ch" data-act="cmode" data-m="h"></span><b>:</b><span id="cm" data-act="cmode" data-m="m"></span><div class="ap"><button id="cam" data-act="cap" data-p="0">AM</button><button id="cpm" data-act="cap" data-p="1">PM</button></div></div>
+<svg id="cf" viewBox="-110 -110 220 220"></svg>
+<div class="row"><button class="g s" data-act="cclear">Sin hora</button><button class="g s" data-act="ccancel">Cancelar</button><button class="s" data-act="cok">OK</button></div></div></div>
 
 <script type="module">
 const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeImg=u=>typeof u==='string'&&/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u)?u:'';
+const nameKey=n=>String(n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'').slice(0,40);
+const cleanName=n=>String(n||'').replace(/\s+/g,' ').trim().slice(0,24);
 const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
 const SV=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 const THEMES={calabaza:'#e8751a',ambar:'#f2a93b',borgona:'#c4505c',musgo:'#8fa04a'};
@@ -80,22 +107,24 @@ const FIREBASE_CONFIG={
   messagingSenderId:"578281064114",
   appId:"1:578281064114:web:1aeba7ebc224224da26bab"
 };
+const VAPID_KEY=''; // pega aquí la clave pública de Firebase > Configuración > Cloud Messaging > Certificados push web
 const GITHUB={owner:'',repo:'',token:''}; // opcional; el botón de GitHub solo aparece si hay token
 const fmt=d=>d.toLocaleDateString('en-CA');
 const today=()=>fmt(new Date());
 const hhmm=()=>new Date().toTimeString().slice(0,5);
 const t12=h=>{if(!h)return'';const [H,M]=h.split(':').map(Number);return `${H%12||12}:${String(M).padStart(2,'0')} ${H<12?'AM':'PM'}`};
-const timePick=id=>`<div class="row" id="${id}"><select><option value="">Sin hora</option>${[...Array(12)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}</select><select>${[...Array(12)].map((_,i)=>{const m=String(i*5).padStart(2,'0');return`<option>${m}</option>`}).join('')}</select><select><option>AM</option><option>PM</option></select></div>`;
+const timePick=id=>`<button type="button" class="g tp" id="${id}" data-act="clock">🕐 ${draft[id]?t12(draft[id]):'Sin hora'}</button>`;
 const fbErr=e=>{const c=e?.code||'';toast(
   c.includes('permission')?'Sin permiso en Firestore: publica las reglas en la consola de Firebase':
   (c==='timeout'||c.includes('unavailable')||c.includes('not-found')||c.includes('failed-precondition'))?'Firestore no responde: crea la base de datos y revisa que las reglas estén publicadas':
   'Error: '+(e?.message||c),'borgona')};
 const snap=(r,fn)=>fb.F.onSnapshot(r,fn,fbErr);
 const W=(p,ms=8000)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),ms))]);
-const readTime=id=>{const x=[...document.querySelectorAll('#'+id+' select')];if(!x[0]?.value)return'';let H=+x[0].value%12;if(x[2].value==='PM')H+=12;return String(H).padStart(2,'0')+':'+x[1].value};
+const readTime=id=>draft[id]||'';
+let clock={},entering=false,nameChecked=false,rper='dia',roff=0,hoySig='';
 
 let peer={uid:null,date:null,tasks:[],logs:[]},peerUn=[];
-let all={users:[],tasks:[],logs:[]},draft={},me=null,ready=false,tasks=[],logs=[],fb=null,unsubs=[],view='hoy',pending=null,authMode='login',per='sem',off=0;
+let all={users:[],tasks:[],logs:[]},draft={},me=null,ready=false,tasks=[],logs=[],fb=null,unsubs=[],view='hoy',pending=null,pendDate=null,authMode='login',per='sem',off=0;
 
 /* ---------- Inicio y usuarios ---------- */
 async function init(){
@@ -105,12 +134,14 @@ async function init(){
       const b='https://www.gstatic.com/firebasejs/10.12.2/';
       const [A,F,S,U]=await Promise.all([import(b+'firebase-app.js'),import(b+'firebase-firestore.js'),import(b+'firebase-storage.js'),import(b+'firebase-auth.js')]);
       const app=A.initializeApp(cfg);
-      fb={F,S,U,db:F.getFirestore(app),st:S.getStorage(app),auth:U.getAuth(app)};
+      let M=null;try{const m=await import(b+'firebase-messaging.js');if(await m.isSupported())M=m}catch{}
+      fb={F,S,U,M,msg:M?M.getMessaging(app):null,db:F.getFirestore(app),st:S.getStorage(app),auth:U.getAuth(app)};
       U.onAuthStateChanged(fb.auth,u=>{
         unsubs.forEach(x=>x());unsubs=[];tasks=[];logs=[];all={users:[],tasks:[],logs:[]};peerUn.forEach(x=>x());peerUn=[];peer={uid:null,date:null,tasks:[],logs:[]};
-        me=u?{uid:u.uid,name:u.displayName||'Usuario',photo:'',admin:false}:null;
+        nameChecked=false;me=u?{uid:u.uid,name:u.displayName||'Usuario',photo:'',admin:false}:null;
         if(me){
           subscribe();
+          if(window.Notification&&Notification.permission==='granted')enablePush(true).catch(()=>{});
         }
         ready=true;render();
       });
@@ -126,7 +157,7 @@ function subscribe(){
           snap(q('logs'),s=>{logs=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
           snap(F.query(F.collection(db,'avisos'),F.where('toUid','==',me.uid),F.where('seen','==',false)),s=>s.docChanges().forEach(c=>{
             if(c.type==='added'){const x=c.doc.data();fire(x.title,x.body,x.theme);F.updateDoc(c.doc.ref,{seen:true})}})),
-          snap(F.doc(db,'users',me.uid),s=>{const x=s.data()||{};if(x.name)me.name=x.name;me.photo=x.photo||'';const a=!!x.admin;if(a&&!me.admin){me.admin=true;subAdmin()}if(!a)me.admin=false;refresh()}),
+          snap(F.doc(db,'users',me.uid),s=>{if(!s.exists()){if(!entering)ensureProfile()}else if(!nameChecked){nameChecked=true;ensureName()}const x=s.data()||{};if(x.name)me.name=x.name;me.photo=x.photo||'';const a=!!x.admin;if(a&&!me.admin){me.admin=true;subAdmin()}if(!a)me.admin=false;refresh()}),
           snap(F.collection(db,'users'),s=>{all.users=s.docs.map(d=>({id:d.id,uid:d.id,...d.data()}));refresh()})];
 }
 function subAdmin(){
@@ -152,17 +183,36 @@ function loadLocal(){
 }
 async function enter(name,existing){
   if(fb){
-    const c=await fb.U.signInAnonymously(fb.auth);
-    await fb.U.updateProfile(c.user,{displayName:name});
-    await fb.F.setDoc(fb.F.doc(fb.db,'users',c.user.uid),{uid:c.user.uid,name,photo:''},{merge:true});
+    const nm=cleanName(name),k=nameKey(nm);
+    if(!k)throw new Error('Usa letras o números en tu nombre');
+    entering=true;
+    try{
+      const c=await fb.U.signInAnonymously(fb.auth);
+      try{await fb.F.setDoc(fb.F.doc(fb.db,'names',k),{uid:c.user.uid})}
+      catch(e){await fb.U.deleteUser(c.user).catch(()=>fb.U.signOut(fb.auth));throw new Error('Ese nombre ya está en uso. Elige otro.')}
+      await fb.U.updateProfile(c.user,{displayName:nm});
+      await fb.F.setDoc(fb.F.doc(fb.db,'users',c.user.uid),{uid:c.user.uid,name:nm,photo:''},{merge:true});
+    }finally{entering=false}
     return;
   }
   const users=LS('users',[]);let u=existing&&users.find(x=>x.uid===existing);
-  if(!u){u={uid:'u'+Date.now(),name,photo:'',admin:users.length===0};users.push(u);SV('users',users)}
+  if(!u){const nm=cleanName(name),k=nameKey(nm);if(!k)throw new Error('Usa letras o números en tu nombre');if(users.some(x=>nameKey(x.name)===k))throw new Error('Ese nombre ya está en uso. Elige otro.');u={uid:'u'+Date.now(),name:nm,photo:'',admin:users.length===0};users.push(u);SV('users',users)}
   me={uid:u.uid,name:u.name,photo:u.photo||'',admin:!!u.admin};SV('me',me);loadLocal();view='hoy';render();
 }
 async function saveProfile(name,photo){
-  if(name!=null)me.name=name;if(photo!=null)me.photo=photo;
+  if(name!=null){
+    name=cleanName(name);const k=nameKey(name),old=nameKey(me.name);
+    if(!k)throw new Error('Usa letras o números en tu nombre');
+    if(k!==old){
+      if(all.users.some(u=>u.uid!==me.uid&&nameKey(u.name)===k))throw new Error('Ese nombre ya está en uso. Elige otro.');
+      if(fb){
+        try{await fb.F.setDoc(fb.F.doc(fb.db,'names',k),{uid:me.uid})}catch(e){throw new Error('Ese nombre ya está en uso. Elige otro.')}
+        fb.F.deleteDoc(fb.F.doc(fb.db,'names',old)).catch(()=>{});
+      }
+    }
+    me.name=name;
+  }
+  if(photo!=null)me.photo=photo;
   if(fb){
     await fb.F.setDoc(fb.F.doc(fb.db,'users',me.uid),{name:me.name,photo:me.photo||''},{merge:true});
     fb.U.updateProfile(fb.auth.currentUser,{displayName:me.name}).catch(()=>{});
@@ -171,14 +221,83 @@ async function saveProfile(name,photo){
   }
   render();
 }
+async function ensureProfile(){
+  try{
+    const {F,db}=fb,u=me.uid;
+    const d=await F.getDoc(F.doc(db,'deleted',u));
+    if(d.exists()){toast('Un administrador eliminó tu perfil','borgona');await fb.U.signOut(fb.auth);return}
+    await F.setDoc(F.doc(db,'users',u),{uid:u,name:me.name,photo:''},{merge:true});
+    ensureName();
+  }catch(e){fbErr(e)}
+}
+async function ensureName(){
+  try{
+    const {F,db}=fb,k=nameKey(me.name);if(!k)return;
+    const r=F.doc(db,'names',k),d=await F.getDoc(r);
+    if(!d.exists())await F.setDoc(r,{uid:me.uid});
+    else if(d.data().uid!==me.uid)toast('Otra persona ya usa tu nombre. Cámbialo en Ajustes','borgona');
+  }catch(e){}
+}
+async function delUser(u){
+  if(fb){
+    const {F,db}=fb,nr=F.doc(db,'names',nameKey(u.name));
+    await F.setDoc(F.doc(db,'deleted',u.uid),{at:Date.now()});
+    await Promise.all([
+      ...all.tasks.filter(t=>t.uid===u.uid).map(t=>F.deleteDoc(F.doc(db,'tasks',t.id))),
+      ...all.logs.filter(l=>l.uid===u.uid).map(l=>F.deleteDoc(F.doc(db,'logs',l.id))),
+      F.deleteDoc(F.doc(db,'tokens',u.uid)).catch(()=>{}),
+      F.getDoc(nr).then(d=>d.exists()&&d.data().uid===u.uid?F.deleteDoc(nr):null).catch(()=>{}),
+      F.deleteDoc(F.doc(db,'users',u.uid))
+    ]);
+  }else{
+    SV('users',LS('users',[]).filter(x=>x.uid!==u.uid));
+    SV('tasks',LS('tasks',[]).filter(x=>x.uid!==u.uid));
+    SV('logs',LS('logs',[]).filter(x=>x.uid!==u.uid));
+    loadLocal();render();
+  }
+}
+async function enablePush(silent){
+  if(!fb?.M||!('Notification' in window))throw new Error('Este navegador no permite notificaciones');
+  if(!VAPID_KEY)throw new Error('Falta pegar la clave VAPID en el código');
+  const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+  if(perm!=='granted')throw new Error('Permiso bloqueado. Actívalo en los ajustes del navegador');
+  const reg=await navigator.serviceWorker.ready;
+  const token=await fb.M.getToken(fb.msg,{vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+  if(!token)throw new Error('No se pudo activar en este celular');
+  await fb.F.setDoc(fb.F.doc(fb.db,'tokens',me.uid),{uid:me.uid,tokens:fb.F.arrayUnion(token),updated:Date.now()},{merge:true});
+  if(!silent){toast('Notificaciones activadas 🔔','musgo');render()}
+}
+async function selfDelete(){
+  if(fb){
+    const {F,db}=fb,u=me.uid,nr=F.doc(db,'names',nameKey(me.name));
+    entering=true;
+    try{
+      await Promise.all([
+        ...tasks.map(t=>F.deleteDoc(F.doc(db,'tasks',t.id))),
+        ...logs.map(l=>F.deleteDoc(F.doc(db,'logs',l.id))),
+        F.deleteDoc(F.doc(db,'tokens',u)).catch(()=>{}),
+        F.getDoc(nr).then(d=>d.exists()&&d.data().uid===u?F.deleteDoc(nr):null).catch(()=>{})
+      ]);
+      await F.deleteDoc(F.doc(db,'users',u));
+      await fb.U.deleteUser(fb.auth.currentUser).catch(()=>fb.U.signOut(fb.auth));
+    }finally{entering=false}
+  }else{
+    const u=me.uid;
+    SV('users',LS('users',[]).filter(x=>x.uid!==u));
+    SV('tasks',LS('tasks',[]).filter(x=>x.uid!==u));
+    SV('logs',LS('logs',[]).filter(x=>x.uid!==u));
+    me=null;tasks=[];logs=[];localStorage.removeItem('me');render();
+  }
+}
 async function logout(){
-  if(fb){if(!confirm('Si sales, solo podrás volver a entrar creando otro perfil. ¿Salir?'))return;return fb.U.signOut(fb.auth)}
+  if(fb){if(!confirm('Si sales, no podrás volver a entrar con este perfil ni con este nombre, a menos que un administrador lo elimine. ¿Salir?'))return;return fb.U.signOut(fb.auth)}
   me=null;tasks=[];logs=[];localStorage.removeItem('me');render();
 }
 
 /* ---------- Datos por usuario ---------- */
-async function addTask(title,time){
-  const t={title,time,uid:me.uid,createdAt:today()};
+async function addTask(title,time,to){
+  const t={title,time,uid:to||me.uid,createdAt:today()};
+  if(to&&to!==me.uid){t.from=me.name;t.fromUid=me.uid}
   if(fb)return W(fb.F.addDoc(fb.F.collection(fb.db,'tasks'),t));
   const all=LS('tasks',[]);all.push({id:'t'+Date.now(),...t});SV('tasks',all);loadLocal();render();
 }
@@ -186,12 +305,21 @@ async function delTask(id){
   if(fb)return W(fb.F.deleteDoc(fb.F.doc(fb.db,'tasks',id)));
   SV('tasks',LS('tasks',[]).filter(t=>t.id!==id));loadLocal();render();
 }
+async function updTask(id,data){
+  if(fb)return W(fb.F.updateDoc(fb.F.doc(fb.db,'tasks',id),data));
+  SV('tasks',LS('tasks',[]).map(t=>t.id===id?{...t,...data}:t));loadLocal();render();
+}
 async function setLog(taskId,date,data){
   const id=date+'_'+taskId;
   if(fb)return W(fb.F.setDoc(fb.F.doc(fb.db,'logs',id),{uid:me.uid,taskId,date,...data},{merge:true}));
   const all=LS('logs',[]),i=all.findIndex(l=>l.id===id);
   if(i<0)all.push({id,uid:me.uid,taskId,date,...data});else all[i]={...all[i],...data};
   SV('logs',all);loadLocal();render();
+}
+async function delLog(taskId,date){
+  const id=date+'_'+taskId;
+  if(fb)return W(fb.F.deleteDoc(fb.F.doc(fb.db,'logs',id)));
+  SV('logs',LS('logs',[]).filter(l=>l.id!==id));loadLocal();render();
 }
 function compress(file,max=1000,q=.72){
   return new Promise(res=>{
@@ -233,13 +361,11 @@ function checkAvisos(){
   if(ch)SV('avisos',l);
 }
 function fire(title,body,theme){toast(`${title}${body?' · '+body:''}`,theme);sys(title,body)}
-const nk=()=>'notifs_'+me.uid;
 setInterval(()=>{
   if(!me)return;
   if(!fb){loadLocal();checkAvisos();if(view==='eq')refresh()}
-  const now=hhmm(),d=today(),n=LS(nk(),[]);let ch=false;
-  n.forEach(x=>{if(x.time===now&&x.last!==d){x.last=d;ch=true;fire(x.title,x.body,x.theme)}});
-  if(ch)SV(nk(),n);
+  const now=hhmm(),d=today();
+  if(view==='hoy'){const sg=d+tasks.map(t=>stat(t).k).join('');if(sg!==hoySig){hoySig=sg;refresh()}}
   const fk='fired_'+me.uid+'_'+d,fired=LS(fk,[]);
   tasks.forEach(t=>{
     if(t.time===now&&!fired.includes(t.id)&&!logs.find(l=>l.taskId===t.id&&l.date===d&&l.done)){
@@ -294,13 +420,25 @@ function stats(){
 
 /* ---------- Pantallas ---------- */
 const logOf=(id,d)=>logs.find(l=>l.taskId===id&&l.date===d);
-const av=(u,c='')=>u?.photo?`<img class="av ${c}" src="${u.photo}" alt="foto">`:`<div class="av ${c}">${esc((u?.name||'?')[0].toUpperCase())}</div>`;
+const av=(u,c='')=>safeImg(u?.photo)?`<img class="av ${c}" src="${safeImg(u.photo)}" alt="foto">`:`<div class="av ${c}">${esc((u?.name||'?')[0].toUpperCase())}</div>`;
 function pendHtml(){
   const {g}=groups(),td=today(),out=[];
   g.forEach(x=>x.days.forEach(ds=>{if(ds>td)return;
     tasks.filter(t=>(!t.createdAt||t.createdAt<=ds)&&!logs.find(l=>l.taskId===t.id&&l.date===ds&&l.done)).forEach(t=>out.push({d:ds,t:t.title}))}));
   out.sort((a,b)=>b.d.localeCompare(a.d));
   return`<h2>Tareas sin completar (${out.length})</h2>`+(out.slice(0,40).map(x=>`<div class="card" style="border-left:6px solid ${x.d===td?'var(--ambar)':'var(--borgona)'}"><div class="t">${esc(x.t)}<small>${x.d===td?'Hoy · aún pendiente':x.d}</small></div></div>`).join('')||'<p class="empty">¡Completaste todo en este periodo! 🎉</p>')+(out.length>40?'<p class="sub">Mostrando las 40 más recientes.</p>':'');
+}
+function stat(t){
+  const n=new Date(),[H,M]=t.time?t.time.split(':').map(Number):[23,59],diff=H*60+M-(n.getHours()*60+n.getMinutes());
+  if(diff<0)return{k:'bad',f:'😡',diff};
+  if(diff<=60)return{k:'warn',f:'😟',diff};
+  return{k:'ok',f:'😊',diff};
+}
+const left=m=>m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`;
+function regRow(l,d){
+  const t=tasks.find(x=>x.id===l.taskId);
+  return`<div class="rg"><div class="top">${safeImg(l.img)?`<img src="${safeImg(l.img)}" data-act="zoom" alt="evidencia">`:'<div class="av" style="border-radius:10px">📷</div>'}<div class="t">${esc(t?.title||'Tarea eliminada')}<small>${l.at?'Hecha a las '+t12(l.at):''}</small></div></div>
+  <div class="row" style="margin-top:8px"><button class="g s" data-act="rfoto" data-id="${esc(l.taskId)}" data-d="${esc(d)}">📷 Cambiar foto</button><button class="g s" data-act="rdel" data-id="${esc(l.taskId)}" data-d="${esc(d)}">🗑 Eliminar</button></div></div>`;
 }
 function render(){
   const el=$('#app'),nav=$('#nav');
@@ -310,23 +448,42 @@ function render(){
   if(!me){
     const lu=fb?[]:LS('users',[]);
     el.innerHTML=`<h1 style="margin-top:40px">🍂 Tareas de Otoño</h1><p class="sub">Escribe tu nombre para empezar</p><div style="height:16px"></div>
-    <input id="an" placeholder="Tu nombre"><button style="width:100%" data-act="enter">Entrar</button>
-    ${lu.length?`<h2>Perfiles en este celular</h2>${lu.map(u=>`<div class="card" data-act="pick" data-id="${u.uid}">${av(u)}<div class="t">${esc(u.name)}</div></div>`).join('')}`:''}
+    <input id="an" maxlength="24" placeholder="Tu nombre"><button style="width:100%" data-act="enter">Entrar</button>
+    ${lu.length?`<h2>Perfiles en este celular</h2>${lu.map(u=>`<div class="card" data-act="pick" data-id="${esc(u.uid)}">${av(u)}<div class="t">${esc(u.name)}</div></div>`).join('')}`:''}
     ${fb?'':'<p class="sub">Modo local: los perfiles solo viven en este celular. Conecta Firebase para compartir usuarios entre celulares.</p>'}`;
     return;
   }
   if(view==='eq'&&!me.admin)view='hoy';
   if(view==='hoy'){
     const d=today(),ts=[...tasks].sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));
-    const done=ts.filter(t=>logOf(t.id,d)?.done).length,pct=ts.length?done/ts.length*100:0;
+    const pend=ts.filter(t=>!logOf(t.id,d)?.done),done=ts.length-pend.length,pct=ts.length?done/ts.length*100:0;
+    const others=all.users.filter(u=>u.uid!==me.uid);
+    const items=[];
+    for(let i=7;i>=1;i--){
+      const x=new Date();x.setHours(0,0,0,0);x.setDate(x.getDate()-i);const ds=fmt(x);
+      ts.forEach(t=>{if((!t.createdAt||t.createdAt<=ds)&&!logs.some(l=>l.taskId===t.id&&l.date===ds&&l.done))items.push({t,d:ds,k:'bad',f:'😡',lb:i===1?'ayer':ds.slice(5)})});
+    }
+    pend.forEach(t=>items.push({t,d,...stat(t)}));
+    const seen=new Set();
+    const listHtml=items.map(it=>{
+      const t=it.t,first=!seen.has(t.id);seen.add(t.id);
+      if(draft.edit===t.id&&first)return`<div class="card" style="display:block"><input id="et" maxlength="80" value="${esc(t.title)}" placeholder="Nombre de la tarea">${timePick('eh')}<div class="row"><button data-act="esave" data-id="${esc(t.id)}">Guardar</button><button class="g" data-act="ecancel">Cancelar</button></div></div>`;
+      let msg;
+      if(it.d!==d)msg=`⚠️ Vencida · ${esc(it.lb)}`;
+      else if(it.k==='bad')msg=`⚠️ Vencida · era a las ${t12(t.time)}`;
+      else if(it.k==='warn')msg=`⏳ Casi se vence · faltan ${left(it.diff)}`;
+      else msg=t.time?`Tienes tiempo · faltan ${left(it.diff)}`:'Tienes todo el día';
+      return`<div class="card ${it.k}" data-act="tap" data-id="${esc(t.id)}" data-d="${esc(it.d)}"><div class="face">${it.f}</div><div class="t">${esc(t.title)}<small>${t.time?'⏰ '+t12(t.time):'Sin hora'}${t.from?' · de '+esc(t.from):''} · ${msg}</small></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><button class="g s" data-act="edit" data-id="${esc(t.id)}">✏️ Editar</button><button class="g s" data-act="del" data-id="${esc(t.id)}">🗑 Eliminar</button></div></div>`;
+    }).join('')||`<p class="empty">${ts.length?'¡Terminaste todo por hoy! 🍁':'No tienes tareas. Agrega la primera 👆'}</p>`;
     el.innerHTML=`<div style="display:flex;gap:12px;align-items:center">${av(me)}<div><h1>Hola, ${esc(me.name)}</h1><p class="sub cap">${new Date().toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})} · ${done}/${ts.length} listas</p></div></div>
-    <div class="bar"><i style="width:${pct}%"></i></div>
-    ${ts.map(t=>{const l=logOf(t.id,d);return`<div class="card ${l?.done?'done':''}" data-act="tap" data-id="${t.id}">
-      <div class="chk">${l?.done?'✓':''}</div><div class="t">${esc(t.title)}<small>${t.time?'⏰ '+t12(t.time):'Sin hora'}${l?.done?'':' · toca para subir evidencia 📷'}</small></div>
-      ${l?.img?`<img src="${l.img}" alt="evidencia">`:''}</div>`}).join('')||'<p class="empty">No tienes tareas. Agrega la primera 👇</p>'}
     <h2>Agregar tarea diaria</h2>
-    <input id="nt" placeholder="Ej: Estudiar 1 hora">${timePick('nh')}<button style="width:100%" data-act="add">Agregar</button>
-    ${ts.length?`<h2>Quitar tareas</h2>${ts.map(t=>`<button class="g s" data-act="del" data-id="${t.id}" style="margin:0 6px 6px 0">✕ ${esc(t.title)}</button>`).join('')}`:''}`;
+    <input id="nt" maxlength="80" placeholder="Ej: Estudiar 1 hora">
+    <select id="nto"><option value="${esc(me.uid)}">Para mí</option>${others.map(u=>`<option value="${esc(u.uid)}" ${draft.nto===u.uid?'selected':''}>Para ${esc(u.name)}</option>`).join('')}</select>
+    ${timePick('nh')}<button style="width:100%" data-act="add">Agregar</button>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <h2>Pendientes (${items.length})</h2>
+    ${listHtml}`;
   }
   if(view==='pro'){
     const s=stats();
@@ -339,16 +496,28 @@ function render(){
     ${tasks.length?pendHtml():'<p class="empty">Agrega tareas en la pestaña Hoy para ver tu progreso.</p>'}`;
   }
   if(view==='reg'){
-    const ds=[...new Set(logs.filter(l=>l.done).map(l=>l.date))].sort().reverse();
-    el.innerHTML=`<h1>Registro</h1><p class="sub">Historial de evidencias</p><div style="height:12px"></div>`+(ds.map(d=>{
-      const ls=logs.filter(l=>l.date===d&&l.done);
-      return`<div class="card" style="display:block"><b>${d}</b> <span class="sub">· ${ls.length}/${tasks.length} tareas</span>
-      <div class="thumbs">${ls.map(l=>`<img src="${l.img}" data-act="zoom">`).join('')}</div>
-      ${GITHUB.token?`<button class="s" style="margin-top:10px" data-act="gh" data-d="${d}">Subir a GitHub</button>`:''}</div>`}).join('')||'<p class="empty">Aún no hay tareas terminadas.</p>');
+    const t0=new Date();t0.setHours(0,0,0,0);
+    const seg=`<div class="seg">${[['dia','Días'],['mes','Meses']].map(([k,n])=>`<button class="${rper===k?'on':''}" data-act="rper" data-p="${k}">${n}</button>`).join('')}</div>`;
+    let title,body;
+    if(rper==='dia'){
+      const x=new Date(t0);x.setDate(x.getDate()+roff);const ds=fmt(x);
+      title=roff===0?'Hoy':x.toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'});
+      const dn=logs.filter(l=>l.date===ds&&l.done),pend=tasks.filter(t=>(!t.createdAt||t.createdAt<=ds)&&!dn.some(l=>l.taskId===t.id));
+      body=dn.length+pend.length?`<div class="card" style="display:block"><b>${dn.length}/${dn.length+pend.length} tareas hechas</b>${dn.map(l=>regRow(l,ds)).join('')}${pend.map(t=>`<div class="rg"><div class="t">${esc(t.title)}<small>⏳ Sin completar</small></div></div>`).join('')}${GITHUB.token&&dn.length?`<button class="s" style="margin-top:10px" data-act="gh" data-d="${esc(ds)}">Subir a GitHub</button>`:''}</div>`:'<p class="empty">No hay tareas en este día.</p>';
+    }else{
+      const f=new Date(t0.getFullYear(),t0.getMonth()+roff,1),pre=fmt(f).slice(0,7);
+      title=f.toLocaleDateString('es',{month:'long',year:'numeric'});
+      const ml=logs.filter(l=>l.done&&String(l.date).startsWith(pre)),ds=[...new Set(ml.map(l=>l.date))].sort().reverse();
+      body=`<p class="sub">${ml.length} tareas hechas en ${ds.length} día(s)</p><div style="height:8px"></div>`+(ds.map(d=>{
+        const ls=ml.filter(l=>l.date===d);
+        return`<div class="card" style="display:block"><div class="row" style="align-items:center"><div><b>${esc(d)}</b> <span class="sub">· ${ls.length}/${tasks.length} tareas</span></div><button class="g s" style="flex:none" data-act="rday" data-d="${esc(d)}">Ver día</button></div>${ls.map(l=>regRow(l,d)).join('')}</div>`}).join('')||'<p class="empty">No hay tareas hechas en este mes.</p>');
+    }
+    el.innerHTML=`<h1>Registro</h1>${seg}
+    <div class="nav2"><button class="g" data-act="rstep" data-n="-1">‹</button><b class="cap">${title}</b><button class="g" data-act="rstep" data-n="1" ${roff>=0?'disabled style="opacity:.3"':''}>›</button></div>${body}`;
   }
   if(view==='usr'){
     if(!peer.uid){
-      el.innerHTML=`<h1>Personas</h1><p class="sub">Toca a alguien para ver sus tareas y fotos</p><div style="height:12px"></div>`+(all.users.filter(u=>u.uid!==me.uid).map(u=>`<div class="card" data-act="peer" data-id="${u.uid}">${av(u)}<div class="t">${esc(u.name)}</div><span>›</span></div>`).join('')||'<p class="empty">Aún no hay otras personas registradas.</p>');
+      el.innerHTML=`<h1>Personas</h1><p class="sub">Toca a alguien para ver sus tareas y fotos</p><div style="height:12px"></div>`+(all.users.filter(u=>u.uid!==me.uid).map(u=>`<div class="card" data-act="peer" data-id="${esc(u.uid)}">${av(u)}<div class="t">${esc(u.name)}</div><span>›</span></div>`).join('')||'<p class="empty">Aún no hay otras personas registradas.</p>');
     }else{
       const u=all.users.find(x=>x.uid===peer.uid)||{name:'Usuario'},d=peer.date,td=today();
       const pt=(fb?peer.tasks:all.tasks.filter(t=>t.uid===peer.uid)).filter(t=>!t.createdAt||t.createdAt<=d).sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));
@@ -357,7 +526,7 @@ function render(){
       el.innerHTML=`<button class="g s" data-act="peerback">‹ Volver</button>
       <div style="display:flex;gap:12px;align-items:center;margin:12px 0">${av(u)}<div><h1>${esc(u.name)}</h1><p class="sub">${dn}/${pt.length} tareas hechas</p></div></div>
       <div class="nav2"><button class="g" data-act="pstep" data-n="-1">‹</button><b>${d===td?'Hoy':d}</b><button class="g" data-act="pstep" data-n="1" ${d>=td?'disabled style="opacity:.3"':''}>›</button></div>
-      <div class="bar"><i style="width:${pt.length?dn/pt.length*100:0}%"></i></div>`+(pt.map(t=>{const l=lo(t.id);return`<div class="card ${l?.done?'done':''}"><div class="chk">${l?.done?'✓':''}</div><div class="t">${esc(t.title)}<small>${t.time?'⏰ '+t12(t.time):'Sin hora'}${l?.done?(l.at?' · hecha a las '+t12(l.at):''):' · sin completar'}</small></div>${l?.img?`<img src="${l.img}" data-act="zoom" alt="evidencia">`:''}</div>`}).join('')||'<p class="empty">⚠️ No tiene tareas registradas para este día.</p>');
+      <div class="bar"><i style="width:${pt.length?dn/pt.length*100:0}%"></i></div>`+(pt.map(t=>{const l=lo(t.id);return`<div class="card ${l?.done?'done':''}"><div class="chk">${l?.done?'✓':''}</div><div class="t">${esc(t.title)}<small>${t.time?'⏰ '+t12(t.time):'Sin hora'}${l?.done?(l.at?' · hecha a las '+t12(l.at):''):' · sin completar'}</small></div>${l?.img?`<img src="${safeImg(l.img)}" data-act="zoom" alt="evidencia">`:''}</div>`}).join('')||'<p class="empty">⚠️ No tiene tareas registradas para este día.</p>');
     }
   }
   if(view==='eq'){
@@ -368,29 +537,22 @@ function render(){
     const th=draft.th||'calabaza';
     el.innerHTML=`<h1>Equipo</h1><p class="sub">Avance de hoy y avisos personalizados</p>
     <h2>Enviar aviso a una persona</h2>
-    <select id="av-to"><option value="">Elige usuario…</option>${all.users.map(u=>`<option value="${u.uid}" ${draft.to===u.uid?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
-    <input id="av-t" placeholder="Título" value="${esc(draft.t)}"><textarea id="av-b" rows="2" placeholder="Mensaje">${esc(draft.b)}</textarea>
+    <select id="av-to"><option value="">Elige usuario…</option>${all.users.map(u=>`<option value="${esc(u.uid)}" ${draft.to===u.uid?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
+    <input id="av-t" maxlength="80" placeholder="Título" value="${esc(draft.t)}"><textarea id="av-b" maxlength="200" rows="2" placeholder="Mensaje">${esc(draft.b)}</textarea>
     <div class="sw">${Object.entries(THEMES).map(([k,c])=>`<label><input type="radio" name="ath" value="${k}" ${k===th?'checked':''}><span style="background:${c}">${k}</span></label>`).join('')}</div>
     <div class="row"><button data-act="sendav">Enviar aviso</button><button class="g" data-act="remind">Recordar pendientes</button></div>
     <h2>Avance de hoy</h2>${rows.map(r=>`<div class="card" style="display:block">
-      <div class="row" style="align-items:center"><div style="display:flex;gap:10px;align-items:center">${av(r.u)}<b>${esc(r.u.name)}</b></div><button class="g s" style="flex:none" data-act="avisar" data-u="${r.u.uid}">Avisar</button></div>
+      <div class="row" style="align-items:center"><div style="display:flex;gap:10px;align-items:center">${av(r.u)}<b>${esc(r.u.name)}</b></div><button class="g s" style="flex:none" data-act="avisar" data-u="${esc(r.u.uid)}">Avisar</button></div>
       ${r.ts.length?`<div class="bar"><i style="width:${r.dn.length/r.ts.length*100}%"></i></div><p class="sub">${r.dn.length}/${r.ts.length} hechas${r.pend.length?' · ⏳ Pendientes: '+r.pend.map(t=>esc(t.title)).join(', '):' · ¡todo listo! 🍁'}</p>`:'<p class="sub">⚠️ No ha registrado tareas</p>'}</div>`).join('')||'<p class="empty">Aún no hay usuarios.</p>'}`;
-  }
-  if(view==='not'){
-    const n=LS(nk(),[]);
-    el.innerHTML=`<h1>Notificaciones</h1><p class="sub">Crea avisos con colores de otoño</p>
-    <h2>Nueva notificación</h2>
-    <input id="ntt" placeholder="Título"><textarea id="ntb" rows="2" placeholder="Mensaje"></textarea>
-    <div class="sw">${Object.entries(THEMES).map(([k,c],i)=>`<label><input type="radio" name="th" value="${k}" ${i?'':'checked'}><span style="background:${c}">${k}</span></label>`).join('')}</div>
-    ${timePick('ntm')}<div class="row"><button class="g" data-act="now">Enviar ahora</button><button data-act="sched">Programar diaria</button></div>
-    <h2>Programadas</h2>${n.map((x,i)=>`<div class="card" style="border-left:6px solid ${THEMES[x.theme]}"><div class="t">${esc(x.title)}<small>${t12(x.time)} · ${esc(x.body)}</small></div><button class="g s" data-act="rm" data-i="${i}">✕</button></div>`).join('')||'<p class="empty">Sin notificaciones programadas.</p>'}`;
   }
   if(view==='aj'){
     el.innerHTML=`<h1>Ajustes</h1>
     <div style="text-align:center;margin:16px 0" data-act="avatar">${av(me,'big')}<p class="sub" style="margin-top:6px">Toca la foto para cambiarla 📷</p></div>
-    <input id="pn" value="${esc(me.name)}" placeholder="Tu nombre"><div class="row"><button data-act="savename">Guardar nombre</button><button class="g" data-act="logout">Salir</button></div>
-    <h2>Avisos</h2><button class="g" style="width:100%" data-act="perm">Permitir avisos</button>
-    <p class="sub" style="margin-top:12px">${fb?'🟢 Conectado a Firebase':'🟠 Modo local (sin Firebase)'}</p>`;
+    <input id="pn" maxlength="24" value="${esc(me.name)}" placeholder="Tu nombre"><div class="row"><button data-act="savename">Guardar nombre</button><button class="g" data-act="logout">Salir</button></div>
+    ${fb&&fb.M?`<h2>Notificaciones</h2><button class="g" style="width:100%" data-act="push">${window.Notification&&Notification.permission==='granted'?'🔔 Activadas (toca para renovar)':'🔔 Activar notificaciones'}</button>`:''}
+    <p class="sub" style="margin-top:12px">${fb?'🟢 Conectado a Firebase':'🟠 Modo local (sin Firebase)'}</p>
+    ${me.admin?'':`<h2>Eliminar mi cuenta</h2><button class="g" style="width:100%;color:#ff8a94" data-act="selfdel">🗑 Eliminar mi cuenta</button><p class="sub" style="margin-top:6px">Se borran tu perfil, tus tareas y tus fotos. Se cierra la sesión y tendrás que registrarte de nuevo.</p>`}
+    ${me.admin?`<h2>Administrar usuarios</h2>${all.users.filter(u=>u.uid!==me.uid).map(u=>`<div class="card">${av(u)}<div class="t">${esc(u.name)}</div><button class="g s" data-act="deluser" data-id="${esc(u.uid)}">🗑 Eliminar</button></div>`).join('')||'<p class="empty">No hay otros usuarios.</p>'}`:''}`;
   }
   nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
 }
@@ -403,7 +565,7 @@ document.addEventListener('click',async e=>{
   if(a==='enter'){const nm=$('#an').value.trim();if(!nm)return toast('Escribe tu nombre','borgona');try{await enter(nm)}catch(err){toast(err.message,'borgona')}}
   if(a==='pick')enter(null,b.dataset.id);
   if(a==='avatar')$('#pfile').click();
-  if(a==='savename'){const n=$('#pn').value.trim();if(n){await saveProfile(n);toast('Nombre actualizado','musgo')}}
+  if(a==='savename'){const n=$('#pn').value.trim();if(n){try{await saveProfile(n);toast('Nombre actualizado','musgo')}catch(err){toast(err.message||'No se pudo guardar','borgona')}}}
   if(a==='peer')openPeer(b.dataset.id,today());
   if(a==='peerback')openPeer(null,null);
   if(a==='pstep'){const x=new Date(peer.date+'T00:00:00');x.setDate(x.getDate()+ +b.dataset.n);const nd=fmt(x);if(nd<=today())openPeer(peer.uid,nd)}
@@ -423,38 +585,92 @@ document.addEventListener('click',async e=>{
   }
   if(a==='per'){per=b.dataset.p;off=0;render()}
   if(a==='step'){off+=+b.dataset.n;if(off>0)off=0;render()}
-  if(a==='tap'){
-    const l=logOf(b.dataset.id,d);
-    if(l?.done){if(confirm('¿Desmarcar esta tarea?'))setLog(b.dataset.id,d,{done:false,img:null});}
-    else{pending=b.dataset.id;$('#file').click()}
+  if(a==='tap'){pending=b.dataset.id;pendDate=b.dataset.d||null;$('#file').click()}
+  if(a==='rfoto'){pending=b.dataset.id;pendDate=b.dataset.d;$('#file').click()}
+  if(a==='rdel'&&confirm('¿Eliminar este registro? La tarea volverá a aparecer en Hoy.'))delLog(b.dataset.id,b.dataset.d).then(()=>toast('Registro eliminado','musgo')).catch(fbErr);
+  if(a==='add'){
+    const t=$('#nt').value.trim(),to=$('#nto').value||me.uid;
+    if(t){try{
+      const tm=readTime('nh');draft.nh='';await addTask(t,tm,to);
+      if(to!==me.uid)sendAviso(to,'Nueva tarea',`${me.name} te puso: ${t}`,'ambar').catch(()=>{});
+      draft.nto=to;toast(to===me.uid?'Tarea guardada':'Tarea enviada ✔','musgo');
+    }catch(e){fbErr(e)}}
   }
-  if(a==='add'){const t=$('#nt').value.trim();if(t){try{await addTask(t,readTime('nh'));toast('Tarea guardada','musgo')}catch(e){fbErr(e)}}}
-  if(a==='del'&&confirm('¿Quitar tarea?'))delTask(b.dataset.id).catch(fbErr);
+  if(a==='rper'){rper=b.dataset.p;roff=0;render()}
+  if(a==='rstep'){roff+=+b.dataset.n;if(roff>0)roff=0;render()}
+  if(a==='rday'){const x=new Date(b.dataset.d+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);rper='dia';roff=Math.min(0,Math.round((x-t)/864e5));render();scrollTo(0,0)}
+  if(a==='push')enablePush(false).catch(err=>toast(err.message||'No se pudo activar','borgona'));
+  if(a==='selfdel'&&confirm('¿Eliminar tu cuenta? Se borran tu perfil, tus tareas y tus fotos. Tendrás que registrarte de nuevo.')){
+    try{await selfDelete();toast('Cuenta eliminada. Regístrate de nuevo para entrar.','musgo')}catch(err){fbErr(err)}
+  }
+  if(a==='deluser'){
+    const u=all.users.find(x=>x.uid===b.dataset.id);
+    if(u&&u.uid!==me.uid&&confirm('¿Eliminar a '+u.name+'? Se borran también sus tareas y registros.')){
+      try{await delUser(u);toast('Usuario eliminado','musgo')}catch(err){fbErr(err)}
+    }
+  }
+  if(a==='clock')openClock(b.id);
+  if(a==='cmode'){clock.mode=b.dataset.m;drawClock()}
+  if(a==='cap'){clock.pm=b.dataset.p==='1';drawClock()}
+  if(a==='cclear')setTime(clock.id,'');
+  if(a==='ccancel')$('#clk').style.display='none';
+  if(a==='cok'){const H=(clock.h%12)+(clock.pm?12:0);setTime(clock.id,String(H).padStart(2,'0')+':'+String(clock.m).padStart(2,'0'))}
+  if(a==='edit'){draft.edit=b.dataset.id;draft.eh=tasks.find(x=>x.id===b.dataset.id)?.time||'';render()}
+  if(a==='ecancel'){draft.edit=null;render()}
+  if(a==='esave'){
+    const t=$('#et').value.trim();if(!t)return toast('Escribe el nombre de la tarea','borgona');
+    try{await updTask(b.dataset.id,{title:t,time:readTime('eh')});draft.edit=null;render();toast('Tarea actualizada','musgo')}catch(err){fbErr(err)}
+  }
+  if(a==='del'&&confirm('¿Eliminar esta tarea?'))delTask(b.dataset.id).then(()=>toast('Tarea eliminada','musgo')).catch(fbErr);
   if(a==='gh')gh(b.dataset.d);
   if(a==='zoom'){$('#view img').src=b.src;$('#view').style.display='grid'}
-  if(a==='now'||a==='sched'){
-    const t=$('#ntt').value.trim()||'Aviso',m=$('#ntb').value.trim(),th=document.querySelector('[name=th]:checked').value;
-    if(a==='now')fire(t,m,th);
-    else if(!readTime('ntm'))toast('Elige una hora','borgona');
-    else{const n=LS(nk(),[]);n.push({title:t,body:m,theme:th,time:readTime('ntm')});SV(nk(),n);toast('Programada ✔','musgo');render()}
-  }
-  if(a==='rm'){const n=LS(nk(),[]);n.splice(+b.dataset.i,1);SV(nk(),n);render()}
-  if(a==='perm'){const r=await Notification.requestPermission();toast(r==='granted'?'Avisos activados':'Avisos bloqueados',r==='granted'?'musgo':'borgona')}
 });
-document.addEventListener('input',e=>{const i=e.target.id;if(i==='av-to')draft.to=e.target.value;if(i==='av-t')draft.t=e.target.value;if(i==='av-b')draft.b=e.target.value});
+document.addEventListener('input',e=>{const i=e.target.id;if(i==='av-to')draft.to=e.target.value;if(i==='av-t')draft.t=e.target.value;if(i==='av-b')draft.b=e.target.value;if(i==='nto')draft.nto=e.target.value});
 document.addEventListener('change',e=>{if(e.target.name==='ath')draft.th=e.target.value});
 $('#file').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f||!pending)return;
-  const id=pending,d=today();pending=null;toast('Subiendo evidencia…','ambar');
+  const id=pending,ed=pendDate,d=ed||today();pending=null;pendDate=null;toast('Subiendo foto…','ambar');
   try{
     const img=await upload(f,id,d);
-    await setLog(id,d,{done:true,img,at:hhmm()});toast('¡Tarea terminada! 🍁','musgo');
+    const ex=logs.some(l=>l.taskId===id&&l.date===d&&l.done);
+    await setLog(id,d,ex?{img}:{done:true,img,at:hhmm()});
+    toast(ex?'Foto actualizada 📷':'¡Tarea terminada! 🍁','musgo');
   }catch(err){fbErr(err)}
 });
 $('#pfile').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{await saveProfile(null,await toUrl(await compress(f,256,.8)));toast('Foto actualizada','musgo')}catch(err){toast(err.message,'borgona')}
 });
+/* ---------- Reloj para elegir la hora ---------- */
+function setTime(id,v){draft[id]=v;const b=document.getElementById(id);if(b)b.textContent='🕐 '+(v?t12(v):'Sin hora');$('#clk').style.display='none'}
+function openClock(id){
+  const v=draft[id],n=new Date();let H=n.getHours(),M=n.getMinutes();
+  if(v){[H,M]=v.split(':').map(Number)}
+  clock={id,h:H%12||12,m:M,pm:H>=12,mode:'h',drag:false};
+  $('#clk').style.display='grid';drawClock();
+}
+function drawClock(){
+  const c=clock,hr=c.mode==='h',a=(hr?(c.h%12)*30:c.m*6)*Math.PI/180,x=78*Math.sin(a),y=-78*Math.cos(a);
+  let n='';
+  for(let i=0;i<12;i++){
+    const v=hr?(i||12):i*5,b=i*Math.PI/6,sel=hr?c.h===v:c.m===v;
+    n+=`<text x="${78*Math.sin(b)}" y="${-78*Math.cos(b)}" text-anchor="middle" dominant-baseline="central" style="font:600 16px system-ui;fill:${sel?'#1a0f0a':'#f5e6d3'}">${hr?v:String(v).padStart(2,'0')}</text>`;
+  }
+  const odd=!hr&&c.m%5!==0;
+  $('#cf').innerHTML=`<circle r="105" style="fill:#1a0f0a"/><line x1="0" y1="0" x2="${x}" y2="${y}" stroke="#e8751a" stroke-width="2"/><circle r="4" fill="#e8751a"/><circle cx="${x}" cy="${y}" r="19" fill="#e8751a"/>${odd?`<circle cx="${x}" cy="${y}" r="3" fill="#1a0f0a"/>`:''}${n}`;
+  $('#ch').textContent=String(c.h).padStart(2,'0');$('#cm').textContent=String(c.m).padStart(2,'0');
+  $('#ch').classList.toggle('on',hr);$('#cm').classList.toggle('on',!hr);
+  $('#cam').classList.toggle('on',!c.pm);$('#cpm').classList.toggle('on',c.pm);
+}
+{
+  const cf=$('#cf');
+  const mv=e=>{const r=cf.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),g=(Math.atan2(dx,-dy)*180/Math.PI+360)%360;
+    if(clock.mode==='h')clock.h=Math.round(g/30)%12||12;else clock.m=Math.round(g/6)%60;drawClock()};
+  cf.addEventListener('pointerdown',e=>{cf.setPointerCapture(e.pointerId);clock.drag=true;mv(e)});
+  cf.addEventListener('pointermove',e=>{if(clock.drag)mv(e)});
+  const up=()=>{if(!clock.drag)return;clock.drag=false;if(clock.mode==='h'){clock.mode='m';drawClock()}};
+  cf.addEventListener('pointerup',up);cf.addEventListener('pointercancel',up);
+}
 init();
 </script>
 </body>
