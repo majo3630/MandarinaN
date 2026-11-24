@@ -257,7 +257,10 @@ async function delUser(u){
   }
 }
 async function enablePush(silent){
-  if(!fb?.M||!('Notification' in window))throw new Error('Este navegador no permite notificaciones');
+  if(!fb?.M||!('Notification' in window)){
+    const ios=/iPhone|iPad|iPod/.test(navigator.userAgent),inst=navigator.standalone||matchMedia('(display-mode: standalone)').matches;
+    throw new Error(ios&&!inst?'En iPhone: toca Compartir, luego Agregar a pantalla de inicio, y abre la app desde ese ícono':'Este navegador no permite notificaciones. Prueba con Chrome');
+  }
   if(!VAPID_KEY)throw new Error('Falta pegar la clave VAPID en el código');
   const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();
   if(perm!=='granted')throw new Error('Permiso bloqueado. Actívalo en los ajustes del navegador');
@@ -549,7 +552,7 @@ function render(){
     el.innerHTML=`<h1>Ajustes</h1>
     <div style="text-align:center;margin:16px 0" data-act="avatar">${av(me,'big')}<p class="sub" style="margin-top:6px">Toca la foto para cambiarla 📷</p></div>
     <input id="pn" maxlength="24" value="${esc(me.name)}" placeholder="Tu nombre"><div class="row"><button data-act="savename">Guardar nombre</button><button class="g" data-act="logout">Salir</button></div>
-    ${fb&&fb.M?`<h2>Notificaciones</h2><button class="g" style="width:100%" data-act="push">${window.Notification&&Notification.permission==='granted'?'🔔 Activadas (toca para renovar)':'🔔 Activar notificaciones'}</button>`:''}
+    ${fb?`<h2>Notificaciones</h2><button class="g" style="width:100%" data-act="push">${window.Notification&&Notification.permission==='granted'?'🔔 Activadas (toca para renovar)':'🔔 Activar notificaciones'}</button>`:''}
     <p class="sub" style="margin-top:12px">${fb?'🟢 Conectado a Firebase':'🟠 Modo local (sin Firebase)'}</p>
     ${me.admin?'':`<h2>Eliminar mi cuenta</h2><button class="g" style="width:100%;color:#ff8a94" data-act="selfdel">🗑 Eliminar mi cuenta</button><p class="sub" style="margin-top:6px">Se borran tu perfil, tus tareas y tus fotos. Se cierra la sesión y tendrás que registrarte de nuevo.</p>`}
     ${me.admin?`<h2>Administrar usuarios</h2>${all.users.filter(u=>u.uid!==me.uid).map(u=>`<div class="card">${av(u)}<div class="t">${esc(u.name)}</div><button class="g s" data-act="deluser" data-id="${esc(u.uid)}">🗑 Eliminar</button></div>`).join('')||'<p class="empty">No hay otros usuarios.</p>'}`:''}`;
