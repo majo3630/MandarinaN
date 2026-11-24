@@ -11,7 +11,7 @@ const messaging=firebase.messaging();
 // Llega un aviso con la app cerrada o en segundo plano
 messaging.onBackgroundMessage(p=>{
   const d=p.data||{};
-  self.registration.showNotification(d.title||'Tareas de Otoño',{body:d.body||'',tag:d.tag||undefined,renotify:!!d.tag});
+  self.registration.showNotification(d.title||'Tareas de Otoño',{body:d.body||'',icon:'icon-192.png',tag:d.tag||undefined,renotify:!!d.tag});
 });
 self.addEventListener('notificationclick',e=>{
   e.notification.close();
