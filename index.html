@@ -15,8 +15,8 @@
 :root{--bg:#1a0f0a;--card:#2a1810;--line:#4a2e1f;--cream:#f5e6d3;--mute:#b89a82;--calabaza:#e8751a;--ambar:#f2a93b;--borgona:#8c2f39;--musgo:#6b7a3a;
  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;margin:0}
-html,body{height:100%}
-body{background:var(--bg);color:var(--cream);font:16px/1.4 system-ui,sans-serif;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+html{min-height:100%;-webkit-text-size-adjust:100%}
+body{min-height:100vh;-webkit-overflow-scrolling:touch;background:var(--bg);color:var(--cream);font:16px/1.4 system-ui,sans-serif;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 main{max-width:520px;margin:auto;padding:16px}
 h1{font-size:24px;color:var(--ambar)}h2{font-size:15px;color:var(--mute);margin:16px 0 8px;font-weight:600}
 .sub{color:var(--mute);font-size:14px}.cap{text-transform:capitalize}
@@ -177,7 +177,13 @@ function openPeer(uid,date){
   }
   render();
 }
-function refresh(){if(document.activeElement?.matches('input,textarea,select'))return;render()}
+let lastTouch=0,deferT=null;
+['touchstart','touchmove','wheel','scroll'].forEach(ev=>addEventListener(ev,()=>{lastTouch=Date.now()},{passive:true}));
+function refresh(){
+  if(document.activeElement?.matches('input,textarea,select'))return;
+  if(Date.now()-lastTouch<1200){clearTimeout(deferT);deferT=setTimeout(refresh,700);return}
+  render();
+}
 function loadLocal(){
   all={users:LS('users',[]),tasks:LS('tasks',[]),logs:LS('logs',[])};
   if(all.users.length&&!all.users.some(u=>u.admin)){all.users[0].admin=true;SV('users',all.users)}
@@ -429,7 +435,7 @@ function regRow(l,d){
   <div class="row" style="margin-top:8px"><button class="g s" data-act="rfoto" data-id="${esc(l.taskId)}" data-d="${esc(d)}">📷 Cambiar foto</button><button class="g s" data-act="rdel" data-id="${esc(l.taskId)}" data-d="${esc(d)}">🗑 Eliminar</button></div></div>`;
 }
 function render(){
-  const el=$('#app'),nav=$('#nav');
+  const y0=window.scrollY,el=$('#app'),nav=$('#nav');
   nav.style.display=me?'flex':'none';
   $('#eqb').style.display=me?.admin?'':'none';
   if(!ready){el.innerHTML='<p class="empty">Cargando…</p>';return}
@@ -543,11 +549,12 @@ function render(){
     ${me.admin?`<h2>Administrar usuarios</h2>${all.users.filter(u=>u.uid!==me.uid).map(u=>`<div class="card">${av(u)}<div class="t">${esc(u.name)}</div><button class="g s" data-act="deluser" data-id="${esc(u.uid)}">🗑 Eliminar</button></div>`).join('')||'<p class="empty">No hay otros usuarios.</p>'}`:''}`;
   }
   nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  if(y0)window.scrollTo(0,y0);
 }
 
 /* ---------- Eventos ---------- */
 document.addEventListener('click',async e=>{
-  const nv=e.target.closest('#nav button');if(nv){view=nv.dataset.v;return render()}
+  const nv=e.target.closest('#nav button');if(nv){view=nv.dataset.v;render();scrollTo(0,0);return}
   const b=e.target.closest('[data-act]');if(!b)return;
   const a=b.dataset.act,d=today();
   if(a==='enter'){const nm=$('#an').value.trim();if(!nm)return toast('Escribe tu nombre','borgona');try{await enter(nm)}catch(err){toast(err.message,'borgona')}}
