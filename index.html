@@ -134,8 +134,8 @@ async function init(){
       const b='https://www.gstatic.com/firebasejs/10.12.2/';
       const [A,F,S,U]=await Promise.all([import(b+'firebase-app.js'),import(b+'firebase-firestore.js'),import(b+'firebase-storage.js'),import(b+'firebase-auth.js')]);
       const app=A.initializeApp(cfg);
-      let M=null;try{const m=await import(b+'firebase-messaging.js');if(await m.isSupported())M=m}catch{}
-      fb={F,S,U,M,msg:M?M.getMessaging(app):null,db:F.getFirestore(app),st:S.getStorage(app),auth:U.getAuth(app)};
+      let M=null,merr='';try{const m=await import(b+'firebase-messaging.js');if(await m.isSupported())M=m;else merr='isSupported=false'}catch(e){merr=String(e&&e.message||e).slice(0,80)}
+      fb={F,S,U,M,merr,msg:M?M.getMessaging(app):null,db:F.getFirestore(app),st:S.getStorage(app),auth:U.getAuth(app)};
       U.onAuthStateChanged(fb.auth,u=>{
         unsubs.forEach(x=>x());unsubs=[];tasks=[];logs=[];all={users:[],tasks:[],logs:[]};peerUn.forEach(x=>x());peerUn=[];peer={uid:null,date:null,tasks:[],logs:[]};
         nameChecked=false;me=u?{uid:u.uid,name:u.displayName||'Usuario',photo:'',admin:false}:null;
@@ -157,7 +157,7 @@ function subscribe(){
           snap(q('logs'),s=>{logs=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
           snap(F.query(F.collection(db,'avisos'),F.where('toUid','==',me.uid),F.where('seen','==',false)),s=>s.docChanges().forEach(c=>{
             if(c.type==='added'){const x=c.doc.data();fire(x.title,x.body,x.theme);F.updateDoc(c.doc.ref,{seen:true})}})),
-          snap(F.doc(db,'users',me.uid),s=>{if(!s.exists()){if(!entering)ensureProfile()}else if(!nameChecked){nameChecked=true;ensureName()}const x=s.data()||{};if(x.name)me.name=x.name;me.photo=x.photo||'';const a=!!x.admin;if(a&&!me.admin){me.admin=true;subAdmin()}if(!a)me.admin=false;refresh()}),
+          snap(F.doc(db,'users',me.uid),s=>{if(!s.exists()){if(!entering)ensureProfile()}const x=s.data()||{};if(x.name)me.name=x.name;me.photo=x.photo||'';const a=!!x.admin;if(a&&!me.admin){me.admin=true;subAdmin()}if(!a)me.admin=false;refresh()}),
           snap(F.collection(db,'users'),s=>{all.users=s.docs.map(d=>({id:d.id,uid:d.id,...d.data()}));refresh()})];
 }
 function subAdmin(){
@@ -183,33 +183,24 @@ function loadLocal(){
 }
 async function enter(name,existing){
   if(fb){
-    const nm=cleanName(name),k=nameKey(nm);
-    if(!k)throw new Error('Usa letras o números en tu nombre');
+    const nm=cleanName(name);
+    if(!nm)throw new Error('Escribe tu nombre');
     entering=true;
     try{
       const c=await fb.U.signInAnonymously(fb.auth);
-      try{await fb.F.setDoc(fb.F.doc(fb.db,'names',k),{uid:c.user.uid})}
-      catch(e){await fb.U.deleteUser(c.user).catch(()=>fb.U.signOut(fb.auth));throw new Error('Ese nombre ya está en uso. Elige otro.')}
       await fb.U.updateProfile(c.user,{displayName:nm});
       await fb.F.setDoc(fb.F.doc(fb.db,'users',c.user.uid),{uid:c.user.uid,name:nm,photo:''},{merge:true});
     }finally{entering=false}
     return;
   }
   const users=LS('users',[]);let u=existing&&users.find(x=>x.uid===existing);
-  if(!u){const nm=cleanName(name),k=nameKey(nm);if(!k)throw new Error('Usa letras o números en tu nombre');if(users.some(x=>nameKey(x.name)===k))throw new Error('Ese nombre ya está en uso. Elige otro.');u={uid:'u'+Date.now(),name:nm,photo:'',admin:users.length===0};users.push(u);SV('users',users)}
+  if(!u){const nm=cleanName(name);if(!nm)throw new Error('Escribe tu nombre');u={uid:'u'+Date.now(),name:nm,photo:'',admin:users.length===0};users.push(u);SV('users',users)}
   me={uid:u.uid,name:u.name,photo:u.photo||'',admin:!!u.admin};SV('me',me);loadLocal();view='hoy';render();
 }
 async function saveProfile(name,photo){
   if(name!=null){
-    name=cleanName(name);const k=nameKey(name),old=nameKey(me.name);
-    if(!k)throw new Error('Usa letras o números en tu nombre');
-    if(k!==old){
-      if(all.users.some(u=>u.uid!==me.uid&&nameKey(u.name)===k))throw new Error('Ese nombre ya está en uso. Elige otro.');
-      if(fb){
-        try{await fb.F.setDoc(fb.F.doc(fb.db,'names',k),{uid:me.uid})}catch(e){throw new Error('Ese nombre ya está en uso. Elige otro.')}
-        fb.F.deleteDoc(fb.F.doc(fb.db,'names',old)).catch(()=>{});
-      }
-    }
+    name=cleanName(name);
+    if(!name)throw new Error('Escribe tu nombre');
     me.name=name;
   }
   if(photo!=null)me.photo=photo;
@@ -227,26 +218,16 @@ async function ensureProfile(){
     const d=await F.getDoc(F.doc(db,'deleted',u));
     if(d.exists()){toast('Un administrador eliminó tu perfil','borgona');await fb.U.signOut(fb.auth);return}
     await F.setDoc(F.doc(db,'users',u),{uid:u,name:me.name,photo:''},{merge:true});
-    ensureName();
   }catch(e){fbErr(e)}
-}
-async function ensureName(){
-  try{
-    const {F,db}=fb,k=nameKey(me.name);if(!k)return;
-    const r=F.doc(db,'names',k),d=await F.getDoc(r);
-    if(!d.exists())await F.setDoc(r,{uid:me.uid});
-    else if(d.data().uid!==me.uid)toast('Otra persona ya usa tu nombre. Cámbialo en Ajustes','borgona');
-  }catch(e){}
 }
 async function delUser(u){
   if(fb){
-    const {F,db}=fb,nr=F.doc(db,'names',nameKey(u.name));
+    const {F,db}=fb;
     await F.setDoc(F.doc(db,'deleted',u.uid),{at:Date.now()});
     await Promise.all([
       ...all.tasks.filter(t=>t.uid===u.uid).map(t=>F.deleteDoc(F.doc(db,'tasks',t.id))),
       ...all.logs.filter(l=>l.uid===u.uid).map(l=>F.deleteDoc(F.doc(db,'logs',l.id))),
       F.deleteDoc(F.doc(db,'tokens',u.uid)).catch(()=>{}),
-      F.getDoc(nr).then(d=>d.exists()&&d.data().uid===u.uid?F.deleteDoc(nr):null).catch(()=>{}),
       F.deleteDoc(F.doc(db,'users',u.uid))
     ]);
   }else{
@@ -259,7 +240,8 @@ async function delUser(u){
 async function enablePush(silent){
   if(!fb?.M||!('Notification' in window)){
     const ios=/iPhone|iPad|iPod/.test(navigator.userAgent),inst=navigator.standalone||matchMedia('(display-mode: standalone)').matches;
-    throw new Error(ios&&!inst?'En iPhone: toca Compartir, luego Agregar a pantalla de inicio, y abre la app desde ese ícono':'Este navegador no permite notificaciones. Prueba con Chrome');
+    const dg=' ['+(fb?.merr||'')+' | notif:'+('Notification' in window)+' sw:'+('serviceWorker' in navigator)+' push:'+('PushManager' in window)+' https:'+(location.protocol==='https:')+']';
+    throw new Error((ios&&!inst?'En iPhone: toca Compartir, luego Agregar a pantalla de inicio, y abre la app desde ese ícono':'Este navegador no permite notificaciones. Prueba con Chrome')+dg);
   }
   if(!VAPID_KEY)throw new Error('Falta pegar la clave VAPID en el código');
   const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();
@@ -272,14 +254,13 @@ async function enablePush(silent){
 }
 async function selfDelete(){
   if(fb){
-    const {F,db}=fb,u=me.uid,nr=F.doc(db,'names',nameKey(me.name));
+    const {F,db}=fb,u=me.uid;
     entering=true;
     try{
       await Promise.all([
         ...tasks.map(t=>F.deleteDoc(F.doc(db,'tasks',t.id))),
         ...logs.map(l=>F.deleteDoc(F.doc(db,'logs',l.id))),
         F.deleteDoc(F.doc(db,'tokens',u)).catch(()=>{}),
-        F.getDoc(nr).then(d=>d.exists()&&d.data().uid===u?F.deleteDoc(nr):null).catch(()=>{})
       ]);
       await F.deleteDoc(F.doc(db,'users',u));
       await fb.U.deleteUser(fb.auth.currentUser).catch(()=>fb.U.signOut(fb.auth));
@@ -293,7 +274,7 @@ async function selfDelete(){
   }
 }
 async function logout(){
-  if(fb){if(!confirm('Si sales, no podrás volver a entrar con este perfil ni con este nombre, a menos que un administrador lo elimine. ¿Salir?'))return;return fb.U.signOut(fb.auth)}
+  if(fb){if(!confirm('Si sales, no podrás volver a entrar con este perfil y tendrás que registrarte de nuevo. ¿Salir?'))return;return fb.U.signOut(fb.auth)}
   me=null;tasks=[];logs=[];localStorage.removeItem('me');render();
 }
 
